@@ -140,37 +140,6 @@ int main(int argc, char* argv[]){
     const Blob::Ptr output_blob = infer_request.GetBlob(output_name);
     float* output_data = output_blob->buffer().as<float*>();
 
-    tools::yolov2(output_data, );
-    // tools::yoloNetParseOutput(output_data);
-
-    // size_t N = 1;
-    // size_t C = output_blob->getTensorDesc().getDims().at(0);
-    // size_t H = output_blob->getTensorDesc().getDims().at(1);
-
-    // const InferenceEngine::TBlob<float>::Ptr
-    //     detectionOutArray = std::dynamic_pointer_cast<InferenceEngine::TBlob<float>>(output_blob);
-
-    // float *box = detectionOutArray->data();
-
-    // vector<DetectedObject> detectedObjects;
-    // for (int c = 0; c < 20; c++) {
-    //     vector<DetectedObject> result = tools::yoloNetParseOutput(box, c);
-    //     detectedObjects.insert(detectedObjects.end(), result.begin(), result.end());
-    // }
-
-    // for (int i = 0; i < detectedObjects.size(); i++) {
-    //     std::cout << "[" << i << "," << detectedObjects[i].objectType
-    //             << "] element, prob = " << detectedObjects[i].prob <<
-    //     "    (" << detectedObjects[i].xmin << ","
-    //             << detectedObjects[i].ymin << ")-("
-    //             << detectedObjects[i].xmax << ","
-    //             << detectedObjects[i].ymax << ")" << std::endl;
-    // }
-
-    // tools::addRectangles(image_data.get(), inputDims.at(1), inputDims.at(0), detectedObjects);
-    // tools::addRectangles(reader->img, 608, 608, detectedObjects);
-    // tools::addRectangles(imageData.get(), 450, 755, objs);
-    // tools::addRectangles(imageData.get(), 362, 608, objs);
-    // tools::addRectangles(imageData.get(), 608, 362, objs);
+    tools::yoloNetParseOutput(output_data);
 
 }
