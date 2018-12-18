@@ -9,9 +9,51 @@
 
 convert `.cfg` and `.weights` to `.pb`.
 
-1. install [darkflow](https://github.com/thtrieu/darkflow)
+1. git clone [darkflow](https://github.com/thtrieu/darkflow)
+
+2. `python3 setup.py build_ext --inplace`
 
 
+	```bash
+	AssertionError: expect 44948596 bytes, found 44948600
+	```
+
+	[error ref](https://sites.google.com/view/tensorflow-example-java-api/complete-guide-to-train-yolo/convert-darknet-weights-to-pb-file)
+
+3. modify the line self.offset = 16 in the ./darkflow/utils/loader.py file and replace with self.offset = 20
+
+4. Copy `coco.names` in `darknet/data` to `labels.txt` in `darkflow`.
+
+5. `flow --model cfg/yolo.cfg --load bin/yolo.weights --savepb`
+
+## 2. Convert pb to IR
+
+1. Modify $MO_ROOT/extensions/front/tf/yolo_v3.json
+
+```json
+ [
+   {
+     "id": "TFYOLO",
+     "match_kind": "general",
+     "custom_attributes": {
+       "classes": 80,
+       "coords": 4,
+       "num": 3,
+       "do_softmax": 1
+     }
+   }
+ ]
+```
+
+2. Convert `.pb` to IR
+
+```bash
+./mo_tf.py
+--input_model <path_to_model>/<model_name>.pb \
+--batch 1 \
+--tensorflow_use_custom_operations_config <yolo_v1_v2.json PATH> \
+--output_dir <IR_PATH>
+```
 
 ---
 
@@ -30,30 +72,8 @@ mo_tf.py
 --batch 1
 ```
 
-- generate `V2` IR
-
-yolo_v1_v2.json
-
-```json
- [
-   {
-     "id": "TFYOLO",
-     "match_kind": "general",
-     "custom_attributes": {
-       "classes": 80,
-       "coords": 4,
-       "num": 3,
-       "do_softmax": 1
-     }
-   }
- ]
-```
 
 ```bash
-./mo_tf.py
---input_model <path_to_model>/<model_name>.pb       \
---batch 1                                       \
---tensorflow_use_custom_operations_config <yolo_v1_v2.json PATH>
 
 Model Optimizer arguments:
 Common parameters:
