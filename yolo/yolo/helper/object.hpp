@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <iostream>
 
 using namespace std;
 
@@ -20,9 +21,19 @@ public:
         : xmin(xmin), xmax(xmax), ymin(ymin), ymax(ymax), score(score) {
     }
 
-    
+    friend ostream& operator<<(ostream& out, const DetectedObject& self){
+        out << "xmin: " << self.xmin
+        << " xmax: " << self.xmax 
+        << " ymin: " << self.ymin 
+        << " ymax: " << self.ymax << endl;
+
+        for(int i = 0; i <  self.ClassProb.size(); i ++){
+            out << i << " - " << self.ClassProb.at(i) << endl;
+        }
+
+        return out;
+    }
 
 };
-
 }
 }

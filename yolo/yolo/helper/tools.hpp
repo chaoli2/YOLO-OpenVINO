@@ -62,6 +62,10 @@ void yoloNetParseOutput(const float *net_out) {
             DetectedObjects.push_back(Box);
         }
     }
+
+    cout << DetectedObjects[0] << endl;
+
+
 }
 
 }
