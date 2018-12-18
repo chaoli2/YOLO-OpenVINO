@@ -13,12 +13,14 @@ namespace object{
 class DetectedObject {
 public:
     int objectType;
-    float xmin, xmax, ymin, ymax;
+    float xmin, xmax, ymin, ymax, score;
     vector<float> ClassProb;
 
-    DetectedObject(float xmin, float ymin, float xmax, float ymax)
-        : xmin(xmin), xmax(xmax), ymin(ymin), ymax(ymax) {
+    DetectedObject(float xmin, float ymin, float xmax, float ymax, float score)
+        : xmin(xmin), xmax(xmax), ymin(ymin), ymax(ymax), score(score) {
     }
+
+    
 
 };
 
