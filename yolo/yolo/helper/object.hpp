@@ -52,14 +52,17 @@ public:
     }
 
     friend ostream& operator<<(ostream& out, const Box& self){
-        out << "[x: " << self.x << ",y: " << self.y << "]" 
-        << "[w: " << self.w << ",h: " << self.h << "]" << endl
-        << "coor: (" << self.left << ", " << self.top << ") (" << self.right << "," << self.bot << ")"
+        out << "coor: (" << self.left << ", " << self.top << ") (" << self.right << "," << self.bot << ")"
         << " Class Id: " << self.classIdx << " Prob: " << self.prob.at(self.classIdx);
-        // for(int i = 0; i < self.prob.size(); i ++){
-        //     out << i << " : " << self.prob.at(i) << endl;
-        // }
         return out;
+    }
+
+    bool operator < (const Box& A){
+        return prob[classIdx] < A.prob[A.classIdx];
+    }
+
+    bool operator > (const Box& A){
+        return prob[classIdx] > A.prob[A.classIdx];
     }
 };
 

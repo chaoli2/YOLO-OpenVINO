@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <cassert>
+#include <algorithm>
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -14,7 +15,6 @@
 using namespace std;
 
 namespace tools{
-
 
 helper::object::Box get_region_box(const float *net_out, int n, int index, int i, int j, int w, int h, int stride) {
     // TINY_YOLOV2_ANCHORS
@@ -55,7 +55,9 @@ void correct_region_boxes(vector<helper::object::Box>& boxes, int n, int w, int 
     }
 }
 
-
+bool SortBox(helper::object::Box& A, helper::object::Box& B){
+    return A > B;
+}
 
 /**
  * \brief This function analyses the YOLO net output for a single class
@@ -99,12 +101,15 @@ void yoloNetParseOutput(const float *net_out) {
         }
     }
     int w = 608;
-    int h = 608;
+    int h = 404;
     tools::correct_region_boxes(Boxes, S * S * B, w, h, w, h, 1);
 
-    int n= 5;
-    cout << "Boxes.size: " << Boxes.size() << " Boxes[" << n << "]: "
-    << endl << Boxes[n] << endl;    
+    sort(Boxes.begin(), Boxes.end(), SortBox);
+
+    // for(int n = 0; n < Boxes.size(); n++){
+    for(int n = 0; n < 5; n++){
+        cout << "Boxes[" << n << "]: " << Boxes[n] << endl;
+    }
 
 }
 
