@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
         map<std::string, DataPtr>::iterator it = output_info.begin();
         it != output_info.end();
         it ++){
-        // it->second->setPrecision(Precision::FP32);
+        it->second->setPrecision(Precision::FP32);
         cout << "Output: " << it->first << endl
             << "\tPrecision: " << it->second->getPrecision() << endl;
         cout << "\tDim: [ ";
@@ -92,25 +92,20 @@ int main(int argc, char* argv[]){
 
     // 6. Prepare Input
     /** Collect images data ptrs **/
-    FormatReader::ReaderPtr reader(helper::FLAGS_image.c_str());
-    if (reader.get() == nullptr) {
-        cout << "Image: " << helper::FLAGS_image << " cannot be read!" << endl;
-        return -1;
-    }
+    cv::Mat image = cv::imread(helper::FLAGS_image);
+    image.convertTo(image, CV_32F, 1.0/255.0, 0);
+    cv::imshow("Image", image);
+    cv::waitKey(0);
 
     string input_name = (*input_info.begin()).first;
     Blob::Ptr input = infer_request.GetBlob(input_name);
     size_t num_channels = input->getTensorDesc().getDims()[1];
     size_t image_size = input->getTensorDesc().getDims()[3] * input->getTensorDesc().getDims()[2];
 
-
     /** Iterating over all input blobs **/
     cout << "Prepare Input: " << input_name << endl;
     /** Getting input blob **/
     auto data = input->buffer().as<PrecisionTrait<Precision::FP32>::value_type*>();
-    /** Getting image data **/
-    std::shared_ptr<unsigned char> imageData(reader->getData(input->getTensorDesc().getDims()[3],
-                                                             input->getTensorDesc().getDims()[2]));
     /** Setting batch size **/
     network.setBatchSize(1);
 
@@ -120,7 +115,8 @@ int main(int argc, char* argv[]){
         /** Iterate over all channels **/
         for (size_t pid = 0; pid < image_size; pid++) {
             /** [images stride + channels stride + pixel id ] all in bytes **/
-            data[ch * image_size + pid] = imageData.get()[pid*num_channels + ch] / 255.0;
+            // data[ch * image_size + pid] = imageData.get()[pid*num_channels + ch] / 255.0;
+            data[ch * image_size + pid] = image.at<float>(ch * image_size + pid);
         }
     }
 
@@ -133,7 +129,12 @@ int main(int argc, char* argv[]){
     cout << "Processing output blobs: " << output_name << endl;
     const Blob::Ptr output_blob = infer_request.GetBlob(output_name);
     float* output_data = output_blob->buffer().as<float*>();
-    tools::yoloNetParseOutput(output_data);
+
+    for(int i = 0; i < 10; i++){
+        cout << output_data[i] << " ";
+    }
+    cout << endl;
+    // tools::yoloNetParseOutput(output_data);
 
 
 
