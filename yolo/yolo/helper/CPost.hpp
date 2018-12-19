@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <string>
 #include <stdint.h>
@@ -353,7 +354,7 @@ void get_region_boxes(float *predictions, int lw, int lh, int lcoords, int lclas
 }
 
 
-std::vector<std::vector<float> > yolov2_postprocess(float *data, int size, const float *anchors, float thresh, float nms, int classes) {
+std::vector<std::vector<float> > yolov2_postprocess(float *data, const float *anchors, float thresh, float nms, int classes) {
 
     std::vector<std::vector<float> > ret;
     int coords = 4;
@@ -362,8 +363,8 @@ std::vector<std::vector<float> > yolov2_postprocess(float *data, int size, const
     int imw = 416;
     int imh = 416;
 
-    int lw = 13;
-    int lh = 13;
+    int lw = 19;
+    int lh = 19;
 
     box *boxes = (box *) malloc(lw * lh * num * sizeof(box));
     float **probs = (float **) malloc(lw * lh * num * sizeof(float *));
@@ -384,16 +385,16 @@ std::vector<std::vector<float> > yolov2_postprocess(float *data, int size, const
 
 
 // dets: (left,top,right,bottom,classid,confident)
-extern "C" void yolov2(float * predictions, int32_t size, int classes,
+extern "C" void yolov2(float * predictions, int classes,
                         float threshNMS, float objectnessThresh,
-                        float *dets, int32_t * pCnt)
+                        float *dets, int* pCnt)
 {
     const float TINY_YOLOV2_ANCHORS[] = {1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52};
     std::vector<std::vector<float> > ret;
     
-    ret = yolov2_postprocess(predictions, size, TINY_YOLOV2_ANCHORS, objectnessThresh, threshNMS, classes);
+    ret = yolov2_postprocess(predictions, TINY_YOLOV2_ANCHORS, objectnessThresh, threshNMS, classes);
     
-    //now collect all result boxes
+    // now collect all result boxes
     // dets: (left,top,right,bottom,classid,confident)
 
     for(int k=0;k<ret.size() && k<*pCnt;k++){

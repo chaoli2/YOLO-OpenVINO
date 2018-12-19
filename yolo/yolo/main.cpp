@@ -18,6 +18,7 @@
 
 #include "helper/tools.hpp"
 #include "helper/flags.hpp"
+#include "helper/CPost.hpp"
 
 using namespace InferenceEngine;
 using namespace std;
@@ -139,7 +140,8 @@ int main(int argc, char* argv[]){
     cout << "Processing output blobs: " << output_name << endl;
     const Blob::Ptr output_blob = infer_request.GetBlob(output_name);
     float* output_data = output_blob->buffer().as<float*>();
-
+    int cnt = 19*19*5;
     tools::yoloNetParseOutput(output_data);
-
+    // float* dets = new float[19*19*85];
+    // yolov2(output_data, 80, 0.2, 0.2, dets, &cnt);
 }
