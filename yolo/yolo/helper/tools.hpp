@@ -62,18 +62,7 @@ void correct_region_boxes(vector<helper::object::Box>& boxes, int n, int w, int 
     }
 }
 
-int max_index(float *a, int n) {
-    if (n <= 0) return -1;
-    int i, max_i = 0;
-    float max = a[0];
-    for (i = 1; i < n; ++i) {
-        if (a[i] > max) {
-            max = a[i];
-            max_i = i;
-        }
-    }
-    return max_i;
-}
+
 
 /**
  * \brief This function analyses the YOLO net output for a single class
@@ -100,13 +89,18 @@ void yoloNetParseOutput(const float *net_out) {
             helper::object::Box Box = tools::get_region_box(net_out, n, box_index, col, row, S, S, S * S);
 
             float max = 0;
+            int maxIdx = -1;
             for(int j = 0; j < C; ++j){
                 int class_index = entry_index(S, S, 4, C, B, 0, n * S * S + i, 5 + j);
                 float prob = scale * net_out[class_index];
                 // probs[index][j] = (prob > threshold) ? prob : 0;
                 Box.prob.push_back(prob);
-                if(prob > max) max = prob;
+                if(prob > max){
+                    max = prob;
+                    maxIdx = j;
+                } 
             }
+            Box.classIdx = maxIdx;
             Box.prob.push_back(max);
             Boxes.push_back(Box);
         }
