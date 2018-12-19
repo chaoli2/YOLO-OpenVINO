@@ -75,7 +75,7 @@ int main(int argc, char* argv[]){
         map<std::string, DataPtr>::iterator it = output_info.begin();
         it != output_info.end();
         it ++){
-        it->second->setPrecision(Precision::FP32);
+        // it->second->setPrecision(Precision::FP32);
         cout << "Output: " << it->first << endl
             << "\tPrecision: " << it->second->getPrecision() << endl;
         cout << "\tDim: [ ";
@@ -114,20 +114,13 @@ int main(int argc, char* argv[]){
     /** Setting batch size **/
     network.setBatchSize(1);
 
-    int inputNetworkSize = image_size * num_channels;
-
-    cout << "inputNetworkSize: " << inputNetworkSize << endl;
-
     /** Iterate over all input images **/
     /** Iterate over all pixel in image (r,g,b) **/
-    // InferenceEngine::ConvertImageToInput(
-    //     reader->getData(input->getTensorDesc().getDims()[3], input->getTensorDesc().getDims()[2]).get(), 
-    //     inputNetworkSize, *input);
     for (size_t ch = 0; ch < num_channels; ch++) {
         /** Iterate over all channels **/
         for (size_t pid = 0; pid < image_size; pid++) {
             /** [images stride + channels stride + pixel id ] all in bytes **/
-            data[0 * image_size * num_channels + ch * image_size + pid] = imageData.get()[pid*num_channels + ch]/255.0;
+            data[ch * image_size + pid] = imageData.get()[pid*num_channels + ch] / 255.0;
         }
     }
 
@@ -140,8 +133,8 @@ int main(int argc, char* argv[]){
     cout << "Processing output blobs: " << output_name << endl;
     const Blob::Ptr output_blob = infer_request.GetBlob(output_name);
     float* output_data = output_blob->buffer().as<float*>();
-    int cnt = 19*19*5;
     tools::yoloNetParseOutput(output_data);
-    // float* dets = new float[19*19*85];
-    // yolov2(output_data, 80, 0.2, 0.2, dets, &cnt);
+
+
+
 }
