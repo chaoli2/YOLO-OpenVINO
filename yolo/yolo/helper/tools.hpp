@@ -16,13 +16,6 @@ using namespace std;
 namespace tools{
 
 
-void dispObj(vector<float>& obj){
-    cout << "size: " << obj.size() << endl;
-    for(int i = 0; i <  obj.size(); i ++){
-        cout << i << " - " << obj[i] << endl;
-    }
-}
-
 helper::object::Box get_region_box(const float *net_out, int n, int index, int i, int j, int w, int h, int stride) {
     // TINY_YOLOV2_ANCHORS
     const float biases[] = {1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52};
