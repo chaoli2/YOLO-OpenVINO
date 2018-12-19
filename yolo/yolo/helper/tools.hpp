@@ -103,48 +103,12 @@ void yoloNetParseOutput(const float *net_out) {
     int h = 608;
     tools::correct_region_boxes(Boxes, S * S * B, w, h, w, h, 1);
 
-    cout << "Boxes.size: " << Boxes.size() << " Boxes[0]: " << Boxes[0] << endl;
-    for(int i = 0; i < probs[0].size(); i++){
-        cout << i << " - " << probs[0].at(i) << endl;
+    int n= 5;
+    cout << "Boxes.size: " << Boxes.size() << " Boxes[" << n << "]: " << Boxes[n] << endl;
+    for(int i = 0; i < probs[n].size(); i++){
+        cout << i << " - " << probs[n].at(i) << endl;
     }
     
-
-
-    // Parse Output
-    // vector<vector<float>> objs (S*S, vector<float>());
-    // for(int b = 0; b < B * (B + C); b++){
-    //     for(int r = 0; r < S; r++){
-    //         for(int c = 0; c < S; c++){
-    //             int idx = c + r * S + i * S * S;
-    //             assert(idx < S * S * B * (B + C));
-    //             objs.at(c + r * S).push_back(net_out[idx]);
-    //         }
-    //     }
-    // }
-
-/*
-    // Parse Obj Boxes
-    vector<helper::object::DetectedObject> DetectedObjects;
-    for(auto obj : objs){
-        helper::object::DetectedObject Object;
-        for(int b = 0; b < B; b++){
-
-            // float xmin = obj.at(b*(C+5));
-            // float xmax = obj.at(b*(C+5) + 1);
-            // float ymin = obj.at(b*(C+5) + 2);
-            // float ymax = obj.at(b*(C+5) + 3);
-            // float score = obj.at(b*(C+5) + 4); //box confidence score
-            helper::object::ObjectBox Box (xmin, xmax, ymin, ymax, score);
-            for(int i = 0; i < C; i++){
-                Box.ClassProb.push_back(obj.at(b*(C+5) + i));
-            }
-            Object.Boxes.push_back(Box);
-        }
-        DetectedObjects.push_back(Object);
-    }
-
-    cout << DetectedObjects[0] << endl;
-*/
 
 }
 

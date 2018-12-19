@@ -34,31 +34,31 @@ public:
 class Box {
 public:
     float x, y, w, h;
-    int left; 
-    int right;
-    int top;
-    int bot;
+    float left; 
+    float right;
+    float top;
+    float bot;
 
     Box(float x, float y, float w, float h)
         : x(x), y(y), w(w), h(h) {
         int imw = 608;
         int imh = 608;
-        
-        int left = (b.x - b.w / 2.) * imw;
-        int right = (b.x + b.w / 2.) * imw;
-        int top = (b.y - b.h / 2.) * imh;
-        int bot = (b.y + b.h / 2.) * imh;
+
+        left  = x - w / 2.;
+        right = x + w / 2.;
+        top   = y - h / 2.;
+        bot   = y + h / 2.;
     
-        if (left < 0) left = 0;
-        if (right > imw - 1) right = imw - 1;
-        if (top < 0) top = 0;
-        if (bot > imh - 1) bot = imh - 1;
+        // if (left < 0) left = 0;
+        // if (right > imw - 1) right = imw - 1;
+        // if (top < 0) top = 0;
+        // if (bot > imh - 1) bot = imh - 1;
     }
 
     friend ostream& operator<<(ostream& out, const Box& self){
         out << "[x: " << self.x << ",y: " << self.y << "]"
         << " [w: " << self.w << ",h: " << self.h << "]"
-        << " l: " << self.left << " r: " << self.right << " t: " << self.top << " b: " << self.bot;
+        << " " << self.left << "-" << self.right << "-" << self.top << "-" << self.bot; 
         return out;
     }
 };
