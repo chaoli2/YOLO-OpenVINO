@@ -98,13 +98,16 @@ int main(int argc, char* argv[]){
     size_t image_size = input->getTensorDesc().getDims()[3] * input->getTensorDesc().getDims()[2];
 
     cv::Mat image = cv::imread(helper::FLAGS_image);
+    cv::Mat resizedImg (image);
+    cv::imshow("Image", image);
+    cv::waitKey(0);
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
     int imw = image.size().width;
     int imh = image.size().height;
     double resize_ratio = (double)input->getTensorDesc().getDims()[3] / (double)max(imw, imh);
     image.convertTo(image, CV_32F, 1.0/255.0, 0);
-    cv::resize(image, image, cv::Size(input->getTensorDesc().getDims()[3], input->getTensorDesc().getDims()[2]));
-    cv::imshow("Image", image);
-    cv::waitKey(0);
+    
+    cv::resize(image, resizedImg, cv::Size(input->getTensorDesc().getDims()[3], input->getTensorDesc().getDims()[2]));
 
     /** Iterating over all input blobs **/
     cout << "Prepare Input: " << input_name << endl;
@@ -115,12 +118,22 @@ int main(int argc, char* argv[]){
 
     /** Iterate over all input images **/
     /** Iterate over all pixel in image (r,g,b) **/
-    for (size_t ch = 0; ch < num_channels; ch++) {
-        /** Iterate over all channels **/
-        for (size_t pid = 0; pid < image_size; pid++) {
-            /** [images stride + channels stride + pixel id ] all in bytes **/
-            // data[ch * image_size + pid] = imageData.get()[pid*num_channels + ch] / 255.0;
-            data[ch * image_size + pid] = image.at<float>(ch * image_size + pid);
+    // for (size_t ch = 0; ch < num_channels; ch++) {
+    //     /** Iterate over all channels **/
+    //     for (size_t pid = 0; pid < image_size; pid++) {
+    //         /** [images stride + channels stride + pixel id ] all in bytes **/
+    //         // data[ch * image_size + pid] = imageData.get()[pid*num_channels + ch] / 255.0;
+    //         data[ch * image_size + pid] = image.at<float>(ch * image_size + pid);
+    //         // data[ch * image_size + pid] = image.at<float>(pid*num_channels + ch);
+    //     }
+    // }
+
+    for(int ch = 0; ch < 3; ch++){
+        for(int r = 0; r < input->getTensorDesc().getDims()[3]; r++){
+            for(int c = 0; c < input->getTensorDesc().getDims()[2]; c++){
+                data[ch*image_size + r*input->getTensorDesc().getDims()[3] + c] = 
+                    resizedImg.at<cv::Vec3f>(r, c)[ch];
+            }
         }
     }
 
@@ -138,8 +151,15 @@ int main(int argc, char* argv[]){
         cout << output_data[i] << " ";
     }
     cout << endl;
-    // tools::yoloNetParseOutput(output_data);
+    vector<helper::object::Box> Boxes = tools::yoloNetParseOutput(output_data);
 
-
-
+    for(int i = 0; i < 5; i ++){
+        cv::Point2d p1 (Boxes[i].left, Boxes[i].top);
+        cv::Point2d p2 (Boxes[i].right, Boxes[i].bot);
+        cv::rectangle(resizedImg, p1, p2, cv::Scalar(255, 255, 255));
+    }
+    cv::cvtColor(resizedImg, resizedImg, cv::COLOR_RGB2BGR);
+    cv::resize(resizedImg, resizedImg, cv::Size(imw, imh));
+    cv::imshow("output", resizedImg);
+    cv::waitKey(0);
 }
