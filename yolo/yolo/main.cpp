@@ -92,15 +92,19 @@ int main(int argc, char* argv[]){
 
     // 6. Prepare Input
     /** Collect images data ptrs **/
-    cv::Mat image = cv::imread(helper::FLAGS_image);
-    image.convertTo(image, CV_32F, 1.0/255.0, 0);
-    cv::imshow("Image", image);
-    cv::waitKey(0);
-
     string input_name = (*input_info.begin()).first;
     Blob::Ptr input = infer_request.GetBlob(input_name);
     size_t num_channels = input->getTensorDesc().getDims()[1];
     size_t image_size = input->getTensorDesc().getDims()[3] * input->getTensorDesc().getDims()[2];
+
+    cv::Mat image = cv::imread(helper::FLAGS_image);
+    int imw = image.size().width;
+    int imh = image.size().height;
+    double resize_ratio = (double)input->getTensorDesc().getDims()[3] / (double)max(imw, imh);
+    image.convertTo(image, CV_32F, 1.0/255.0, 0);
+    cv::resize(image, image, cv::Size(input->getTensorDesc().getDims()[3], input->getTensorDesc().getDims()[2]));
+    cv::imshow("Image", image);
+    cv::waitKey(0);
 
     /** Iterating over all input blobs **/
     cout << "Prepare Input: " << input_name << endl;
