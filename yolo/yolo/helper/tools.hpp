@@ -65,7 +65,7 @@ bool SortBox(helper::object::Box& A, helper::object::Box& B){
  * @param class_num - The class number
  * @return a list of found boxes
  */
-void yoloNetParseOutput(const float *net_out) {
+vector<helper::object::Box> yoloNetParseOutput(const float *net_out) {
     cout << "YoloV2 Parse Output" << endl;
     float threshold = 0.2f;         // The confidence threshold
     int C = 80;                     // classes
@@ -111,6 +111,8 @@ void yoloNetParseOutput(const float *net_out) {
         cout << "Boxes[" << n << "]: " << Boxes[n] << endl;
     }
 
+    return Boxes;
+    
 }
 
 }
