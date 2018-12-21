@@ -151,11 +151,11 @@ int main(int argc, char* argv[]){
     int IW = input->getTensorDesc().getDims()[3];
     vector<tools::detection> dets = tools::yoloNetParseOutput(output_data, IH/32, IW/32);
 
-    // for(int i = 0; i < dets.size(); i++){
-    //     if(dets[i].objectness > 0)
-    //         cout << "det[" << i << "]: " << dets[i] << endl;
-    // }
-    cout << dets[0] << endl;
+    for(int i = 0; i < dets.size(); i++){
+        if(dets[i].objectness > 0.5)
+            cout << "det[" << i << "]: " << dets[i] << endl;
+    }
+    // cout << dets[0] << endl;
 
     // for(int i = 0; i < 10; i++){
     //     cout << output_data[i] << " ";
