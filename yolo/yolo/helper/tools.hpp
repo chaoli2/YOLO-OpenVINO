@@ -111,6 +111,13 @@ vector<detection> yoloNetParseOutput(const float* output_data, int IH, int IW){
                     float prob = scale*output_data[class_index];
                     dets[index].prob[j] = (prob > thresh) ? prob : 0;
                 }
+                printf("scale:%f [%f, %f]-[%f, %f] score:%f obj_idx:%i box_idx:%i\n", 
+                    scale, 
+                    dets[index].bbox.x, dets[index].bbox.y,
+                    dets[index].bbox.w, dets[index].bbox.h,
+                    dets[index].objectness,
+                    obj_index,
+                    box_index);
             }
         }
 
