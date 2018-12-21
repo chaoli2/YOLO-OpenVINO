@@ -10,25 +10,57 @@
 #include <opencv2/opencv.hpp>
 
 #include "object.hpp"
-#include "CPost.hpp"
 
 using namespace std;
 
 namespace tools{
 
-helper::object::Box get_region_box(const float *net_out, int n, int index, int i, int j, int w, int h, int stride) {
-    // TINY_YOLOV2_ANCHORS
-    const float biases[] = {1.08, 1.19, 3.42, 4.41, 6.63, 11.38, 9.42, 5.11, 16.62, 10.52};
-    float box_x = (i + net_out[index + 0*stride]) / w;
-    float box_y = (j + net_out[index + 1*stride]) / h;
-    float box_w = exp(net_out[index + 2*stride]) * biases[2*n]   / w;
-    float box_h = exp(net_out[index + 3*stride]) * biases[2*n+1] / h;
-    helper::object::Box b (box_x, box_y, box_w, box_h);
+typedef struct{
+    float x, y, w, h;
+} box;
 
+typedef struct detection{
+    box bbox;
+    int classes;
+    // float* prob;
+    vector<float> prob = vector<float>(80);
+    float objectness;
+    int sort_class;
+
+    friend ostream& operator<<(ostream& out, const detection& self){
+        out << "Class: " << self.classes 
+        << " [" << self.bbox.x << ", " << self.bbox.y 
+        << "] [" << self.bbox.w << ", " << self.bbox.h << "]"
+        << " score: " << self.objectness; 
+        return out;
+    }
+
+} detection;
+
+int entry_index(int IH, int IW, int location, int entry){
+    int n =   location / (IW*IH);
+    int loc = location % (IW*IH);
+    return n*IW*IH*(4+80+1) + entry*IW*IH + loc;
+}
+
+box get_region_box(const float *x, int n, int index, int i, int j, int w, int h, int stride){
+    box b;
+    float biases[10] = {
+        0.572730, 0.677385, 
+        1.874460, 2.062530, 
+        3.338430, 5.474340, 
+        7.882820, 3.527780, 
+        9.770520, 9.168280
+    };
+    b.x = (i + x[index + 0*stride]) / w;
+    b.y = (j + x[index + 1*stride]) / h;
+    b.w = exp(x[index + 2*stride]) * biases[2*n]   / w;
+    b.h = exp(x[index + 3*stride]) * biases[2*n+1] / h;
     return b;
 }
 
-void correct_region_boxes(vector<helper::object::Box>& boxes, int n, int w, int h, int netw, int neth, int relative) {
+void correct_region_boxes(vector<detection>& dets, int n, int w, int h, int netw, int neth, int relative)
+{
     int i;
     int new_w=0;
     int new_h=0;
@@ -40,9 +72,9 @@ void correct_region_boxes(vector<helper::object::Box>& boxes, int n, int w, int 
         new_w = (w * neth)/h;
     }
     for (i = 0; i < n; ++i){
-        helper::object::Box b = boxes.at(i);
-        b.x =  (b.x - (netw - new_w)/2./netw) / ((float)new_w/netw);
-        b.y =  (b.y - (neth - new_h)/2./neth) / ((float)new_h/neth);
+        box b = dets[i].bbox;
+        b.x =  (b.x - (netw - new_w)/2./netw) / ((float)new_w/netw); 
+        b.y =  (b.y - (neth - new_h)/2./neth) / ((float)new_h/neth); 
         b.w *= (float)netw/new_w;
         b.h *= (float)neth/new_h;
         if(!relative){
@@ -51,68 +83,41 @@ void correct_region_boxes(vector<helper::object::Box>& boxes, int n, int w, int 
             b.y *= h;
             b.h *= h;
         }
-        boxes.at(i) = b;
+        dets[i].bbox = b;
     }
 }
 
-bool SortBox(helper::object::Box& A, helper::object::Box& B){
-    return A > B;
-}
 
-/**
- * \brief This function analyses the YOLO net output for a single class
- * @param net_out - The output data
- * @param class_num - The class number
- * @return a list of found boxes
- */
-vector<helper::object::Box> yoloNetParseOutput(const float *net_out) {
-    cout << "YoloV2 Parse Output" << endl;
-    float threshold = 0.2f;         // The confidence threshold
-    int C = 80;                     // classes
-    int B = 5;                      // bounding boxes
-    int S = 19;                     // cell size
+vector<detection> yoloNetParseOutput(const float* output_data, int IH, int IW){
+    vector<detection> dets (IW*IH*5);
+    float thresh = 0.2;
+    for(int i =0; i < IW*IH; i++){
+        int row = i / IW;
+        int col = i % IW;
+        for(int n = 0; n < 5; n++){
+            int index = n*IW*IH + i;
+            int obj_index  = entry_index(IH, IW, n*IW*IH + i, 4);
+            int box_index  = entry_index(IH, IW, n*IW*IH + i, 0);
+            // cout << "obj_index: " << obj_index
+            // << "\tbox_index: " << box_index << endl;
+            float scale = output_data[obj_index];
+            dets[index].bbox = get_region_box(output_data, n, box_index, col, row, IW, IH, IW*IH);
+            dets[index].objectness = scale > thresh ? scale : 0;
 
-    vector<helper::object::Box> Boxes;
-    for(int i = 0; i < S * S; i ++ ){
-        int row = i / S;
-        int col = i % S;
-        for(int n = 0; n < B; n ++){
-            int index = n * S * S + i;
-            int obj_index = entry_index(S, S, 4, C, B, 0, n * S * S + i, 4);
-            int box_index = entry_index(S, S, 4, C, B, 0, n * S * S + i, 0);
-            float scale = net_out[obj_index];
-            helper::object::Box Box = tools::get_region_box(net_out, n, box_index, col, row, S, S, S * S);
-
-            float max = 0;
-            int maxIdx = -1;
-            for(int j = 0; j < C; ++j){
-                int class_index = entry_index(S, S, 4, C, B, 0, n * S * S + i, 5 + j);
-                float prob = scale * net_out[class_index];
-                // probs[index][j] = (prob > threshold) ? prob : 0;
-                Box.prob.push_back(prob);
-                if(prob > max){
-                    max = prob;
-                    maxIdx = j;
-                } 
+            int class_index = entry_index(IH, IW, n*IW*IH + i, 5);
+            if(dets[index].objectness){
+                for(int j = 0; j < 80; ++j){
+                    int class_index = entry_index(IH, IW, n*IW*IH + i, 4 + 1 + j);
+                    float prob = scale*output_data[class_index];
+                    dets[index].prob[j] = (prob > thresh) ? prob : 0;
+                }
             }
-            Box.classIdx = maxIdx;
-            Box.prob.push_back(max);
-            Boxes.push_back(Box);
         }
+
     }
-    int w = 608;
-    int h = 404;
-    tools::correct_region_boxes(Boxes, S * S * B, w, h, w, h, 1);
+    correct_region_boxes(dets, IW*IH*5, 1, 1, IW, IH, 0);
 
-    sort(Boxes.begin(), Boxes.end(), SortBox);
-
-    // for(int n = 0; n < Boxes.size(); n++){
-    for(int n = 0; n < 5; n++){
-        cout << "Boxes[" << n << "]: " << Boxes[n] << endl;
-    }
-
-    return Boxes;
-    
+    return dets;
 }
 
 }

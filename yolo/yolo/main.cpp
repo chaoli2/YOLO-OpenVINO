@@ -147,19 +147,29 @@ int main(int argc, char* argv[]){
     const Blob::Ptr output_blob = infer_request.GetBlob(output_name);
     float* output_data = output_blob->buffer().as<float*>();
 
-    for(int i = 0; i < 10; i++){
-        cout << output_data[i] << " ";
-    }
-    cout << endl;
-    vector<helper::object::Box> Boxes = tools::yoloNetParseOutput(output_data);
+    int IH = input->getTensorDesc().getDims()[2];
+    int IW = input->getTensorDesc().getDims()[3];
+    vector<tools::detection> dets = tools::yoloNetParseOutput(output_data, IH/32, IW/32);
 
-    for(int i = 0; i < 5; i ++){
-        cv::Point2d p1 (Boxes[i].left, Boxes[i].top);
-        cv::Point2d p2 (Boxes[i].right, Boxes[i].bot);
-        cv::rectangle(resizedImg, p1, p2, cv::Scalar(255, 255, 255));
-    }
-    cv::cvtColor(resizedImg, resizedImg, cv::COLOR_RGB2BGR);
-    cv::resize(resizedImg, resizedImg, cv::Size(imw, imh));
-    cv::imshow("output", resizedImg);
-    cv::waitKey(0);
+    // for(int i = 0; i < dets.size(); i++){
+    //     if(dets[i].objectness > 0)
+    //         cout << "det[" << i << "]: " << dets[i] << endl;
+    // }
+    cout << dets[0] << endl;
+
+    // for(int i = 0; i < 10; i++){
+    //     cout << output_data[i] << " ";
+    // }
+    // cout << endl;
+    // vector<helper::object::Box> Boxes = tools::yoloNetParseOutput(output_data);
+
+    // for(int i = 0; i < 5; i ++){
+    //     cv::Point2d p1 (Boxes[i].left, Boxes[i].top);
+    //     cv::Point2d p2 (Boxes[i].right, Boxes[i].bot);
+    //     cv::rectangle(resizedImg, p1, p2, cv::Scalar(255, 255, 255));
+    // }
+    // cv::cvtColor(resizedImg, resizedImg, cv::COLOR_RGB2BGR);
+    // cv::resize(resizedImg, resizedImg, cv::Size(imw, imh));
+    // cv::imshow("output", resizedImg);
+    // cv::waitKey(0);
 }
