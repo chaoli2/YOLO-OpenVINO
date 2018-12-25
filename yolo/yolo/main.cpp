@@ -115,13 +115,15 @@ int main(int argc, char* argv[]){
     /** Setting batch size **/
     network.setBatchSize(1);
 
+    int IH = input->getTensorDesc().getDims()[2];
+    int IW = input->getTensorDesc().getDims()[3];
     /** Iterate over all input images **/
     /** Iterate over all pixel in image (r,g,b) **/
     for(int k = 0; k < 3; k++){
-        for(int j = 0; j < 608; j++){
-            for(int i = 0; i < 608; i++){
-                // int dst_index = i + 608*j + 608*608*k;
-                int dst_index = i*3 + j*608*3 + k;
+        for(int j = 0; j < IH; j++){
+            for(int i = 0; i < IW; i++){
+                // int dst_index = i + IW*j + IW*IH*k;
+                int dst_index = i*3 + j*IH*3 + k;
                 data[dst_index] = resizedImg.at<cv::Vec3f>(j, i)[k];
             }
         }
@@ -146,18 +148,16 @@ int main(int argc, char* argv[]){
     const Blob::Ptr output_blob = infer_request.GetBlob(output_name);
     float* output_data = output_blob->buffer().as<float*>();
 
-    for(int i = 0; i < 1500; i ++){
-        if(output_data[i] > 1){
-            printf("%i %f\n", i,  output_data[i]);
-        }
-    }
-    cout << endl;
+    // for(int i = 0; i < (IH/32)*(IW/32); i ++){
+    //     if(output_data[i] > 1){
+    //         printf("%i %f\n", i,  output_data[i]);
+    //     }
+    // }
+    // cout << endl;
 
-    int IH = input->getTensorDesc().getDims()[2];
-    int IW = input->getTensorDesc().getDims()[3];
     vector<tools::detection> dets = tools::yoloNetParseOutput(output_data, IH/32, IW/32);
     vector<tools::detection> do_nms_sort_dets;
-    tools::do_nms_sort(dets, 19*19*5, 80, 0.45, do_nms_sort_dets);
+    tools::do_nms_sort(dets, (IH/32)*(IW/32)*5, 80, 0.45, do_nms_sort_dets);
     tools::draw_detections(resizedImg, do_nms_sort_dets);
 
     // for(int index = 0; index < dets.size(); index++){

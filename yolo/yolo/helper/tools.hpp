@@ -98,7 +98,7 @@ void correct_region_boxes(vector<detection>& dets, int n, int w, int h, int netw
 vector<detection> yoloNetParseOutput(const float* output_data, int IH, int IW){
     vector<detection> dets (IW*IH*5);
     float thresh = 0.2;
-    for(int i =0; i < 19*19; i++){
+    for(int i =0; i < IH*IW; i++){
         int row = i / IW;
         int col = i % IW;
         for(int n = 0; n < 5; n++){
@@ -148,6 +148,7 @@ vector<detection> yoloNetParseOutput(const float* output_data, int IH, int IW){
     //     }
     // }
     correct_region_boxes(dets, IW*IH*5, 1, 1, IW, IH, 0);
+
 
     return dets;
 }
