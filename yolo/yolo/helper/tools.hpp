@@ -112,14 +112,14 @@ vector<detection> yoloNetParseOutput(
             float scale = output_data[obj_index];
             dets[index].bbox = get_region_box(output_data, n, box_index, col, row, OW, OH, OW*OH);
             dets[index].objectness = scale > thresh ? scale : 0;
-            if(dets[index].objectness)
-            printf("scale:%f [%f, %f]-[%f, %f] score:%f obj_idx:%i box_idx:%i\n", 
-                scale, 
-                dets[index].bbox.x, dets[index].bbox.y,
-                dets[index].bbox.w, dets[index].bbox.h,
-                dets[index].objectness,
-                obj_index,
-                box_index);
+            // if(dets[index].objectness)
+            // printf("scale:%f [%f, %f]-[%f, %f] score:%f obj_idx:%i box_idx:%i\n", 
+            //     scale, 
+            //     dets[index].bbox.x, dets[index].bbox.y,
+            //     dets[index].bbox.w, dets[index].bbox.h,
+            //     dets[index].objectness,
+            //     obj_index,
+            //     box_index);
 
 
             int class_index = entry_index(OH, OW, n*OW*OH + i, 4 + 1);
