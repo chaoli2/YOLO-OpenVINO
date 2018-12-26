@@ -37,17 +37,17 @@ typedef struct detection{
 
 } detection;
 
-int entry_index(int IH, int IW, int location, int entry){
-    int n =   location / (IW*IH);
-    int loc = location % (IW*IH);
+int entry_index(int OH, int OW, int location, int entry){
+    int n =   location / (OW*OH);
+    int loc = location % (OW*OH);
     // printf("l.w: %i l.h: %i l.coords: %i loc: %i entry: %i return: %i\n",
-    //     IH,
-    //     IW,
+    //     OH,
+    //     OW,
     //     4,
     //     location,
     //     entry,
-    //     n*IW*IH*(4+80+1) + entry*IW*IH + loc);
-    return n*IW*IH*(4+80+1) + entry*IW*IH + loc;
+    //     n*OW*OH*(4+80+1) + entry*OW*OH + loc);
+    return n*OW*OH*(4+80+1) + entry*OW*OH + loc;
 }
 
 box get_region_box(const float *x, int n, int index, int i, int j, int w, int h, int stride){
@@ -95,18 +95,22 @@ void correct_region_boxes(vector<detection>& dets, int n, int w, int h, int netw
 }
 
 
-vector<detection> yoloNetParseOutput(const float* output_data, int IH, int IW){
-    vector<detection> dets (IW*IH*5);
-    float thresh = 0.2;
-    for(int i =0; i < IH*IW; i++){
-        int row = i / IW;
-        int col = i % IW;
-        for(int n = 0; n < 5; n++){
-            int index = n*IW*IH + i;
-            int obj_index  = entry_index(IH, IW, n*IW*IH + i, 4);
-            int box_index  = entry_index(IH, IW, n*IW*IH + i, 0);
+vector<detection> yoloNetParseOutput(
+    const float* output_data, 
+    int OH, int OW, 
+    float thresh,
+    int num){
+
+    vector<detection> dets (OW*OH*num);
+    for(int i =0; i < OH*OW; i++){
+        int row = i / OW;
+        int col = i % OW;
+        for(int n = 0; n < num; n++){
+            int index = n*OW*OH + i;
+            int obj_index  = entry_index(OH, OW, n*OW*OH + i, 4);
+            int box_index  = entry_index(OH, OW, n*OW*OH + i, 0);
             float scale = output_data[obj_index];
-            dets[index].bbox = get_region_box(output_data, n, box_index, col, row, IW, IH, IW*IH);
+            dets[index].bbox = get_region_box(output_data, n, box_index, col, row, OW, OH, OW*OH);
             dets[index].objectness = scale > thresh ? scale : 0;
             if(dets[index].objectness)
             printf("scale:%f [%f, %f]-[%f, %f] score:%f obj_idx:%i box_idx:%i\n", 
@@ -118,13 +122,13 @@ vector<detection> yoloNetParseOutput(const float* output_data, int IH, int IW){
                 box_index);
 
 
-            int class_index = entry_index(IH, IW, n*IW*IH + i, 5);
+            int class_index = entry_index(OH, OW, n*OW*OH + i, 4 + 1);
             if(dets[index].objectness){
                 for(int j = 0; j < 80; ++j){
-                    int class_index = entry_index(IH, IW, n*IW*IH + i, 4 + 1 + j);
+                    int class_index = entry_index(OH, OW, n*OW*OH + i, 4 + 1 + j);
                     float prob = scale*output_data[class_index];
-                    // assert(prob >= 0);
-                    // assert(prob <= 1);
+                    assert(prob >= 0);
+                    assert(prob <= 1);
                     dets[index].prob[j] = (prob > thresh) ? prob : 0;
                 }
                 // printf("scale:%f [%f, %f]-[%f, %f] score:%f obj_idx:%i box_idx:%i\n", 
@@ -147,7 +151,7 @@ vector<detection> yoloNetParseOutput(const float* output_data, int IH, int IW){
     //             dets[index].objectness);
     //     }
     // }
-    correct_region_boxes(dets, IW*IH*5, 1, 1, IW, IH, 0);
+    correct_region_boxes(dets, OW*OH*num, 1, 1, OW, OH, 0);
 
 
     return dets;
@@ -223,10 +227,10 @@ void do_nms_sort(vector<tools::detection>& src_dets, int total, int classes,
         }
     }
 
-    for(int i = 0; i < dets.size(); i++){
-        printf("dets[%i]: classes: %i sort_class: %i objectness: %f\n", 
-            i, dets[i].classes, dets[i].sort_class, dets[i].objectness);
-    }
+    // for(int i = 0; i < dets.size(); i++){
+    //     printf("dets[%i]: classes: %i sort_class: %i objectness: %f\n", 
+    //         i, dets[i].classes, dets[i].sort_class, dets[i].objectness);
+    // }
 
 }
 
@@ -241,7 +245,7 @@ void draw_detections(cv::Mat im, vector<tools::detection>& dets){
                     if (classID < 0) {
                         classID = j;
                     }
-                    printf("%i: %.0f%%\n", classID, dets[i].prob[j]*100);
+                    // printf("%i: %.0f%%\n", classID, dets[i].prob[j]*100);
                 }
             }
             if (classID >= 0){
@@ -263,7 +267,7 @@ void draw_detections(cv::Mat im, vector<tools::detection>& dets){
             }
         }
     }
-    cv::cvtColor(im, im, cv::COLOR_RGB2BGR);
+    // cv::cvtColor(im, im, cv::COLOR_RGB2BGR);
     cv::imshow("output", im);
     cv::waitKey(0);
 

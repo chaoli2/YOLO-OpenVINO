@@ -56,7 +56,8 @@ int main(int argc, char* argv[]){
     /** Taking information about a`ll topology outputs **/
     InferenceEngine::OutputsDataMap output_info(network.getOutputsInfo());
 
-    // it->second->setPrecision(Precision::FP32);
+    input_info.begin()->second->setPrecision(Precision::FP32);
+    // input_info.begin()->second->setLayout(Layout::NCHW);
     input_info.begin()->second->setLayout(Layout::NHWC);
     cout << "Input: " << input_info.begin()->first << endl
         << "\tPrecision: " << input_info.begin()->second->getPrecision() << endl;
@@ -83,8 +84,13 @@ int main(int argc, char* argv[]){
     /** Collect images data ptrs **/
     string input_name = (*input_info.begin()).first;
     Blob::Ptr input = infer_request.GetBlob(input_name);
-    size_t num_channels = input->getTensorDesc().getDims()[1];
-    size_t image_size = input->getTensorDesc().getDims()[3] * input->getTensorDesc().getDims()[2];
+    size_t IC = input->getTensorDesc().getDims()[1];
+    size_t IH = input->getTensorDesc().getDims()[2];
+    size_t IW = input->getTensorDesc().getDims()[3];
+    cout << "IC: " + to_string(IC) 
+        + " IH: " + to_string(IH) 
+        + " IW: " + to_string(IW) << endl;
+    size_t image_size = IH * IW;
 
     cv::Mat image = cv::imread(helper::FLAGS_image);
     cv::Mat resizedImg (image);
@@ -92,8 +98,10 @@ int main(int argc, char* argv[]){
     cv::waitKey(0);
     int imw = image.size().width;
     int imh = image.size().height;
+    // double resize_ratio = (double)IH / (double)max(imw, imh);
+    // cv::resize(image, resizedImg, cv::Size(imw*resize_ratio, imh*resize_ratio));
     
-    cv::resize(image, resizedImg, cv::Size(input->getTensorDesc().getDims()[3], input->getTensorDesc().getDims()[2]));
+    cv::resize(image, resizedImg, cv::Size(IH, IW));
     // cv::cvtColor(resizedImg, resizedImg, cv::COLOR_BGR2RGB);
     resizedImg.convertTo(resizedImg, CV_32F, 1.0/255.0, 0);
 
@@ -104,28 +112,19 @@ int main(int argc, char* argv[]){
     /** Setting batch size **/
     network.setBatchSize(1);
 
-    int IH = input->getTensorDesc().getDims()[2];
-    int IW = input->getTensorDesc().getDims()[3];
     /** Iterate over all input images **/
     /** Iterate over all pixel in image (r,g,b) **/
-    for(int k = 0; k < 3; k++){
-        for(int j = 0; j < IH; j++){
-            for(int i = 0; i < IW; i++){
+    for(int row = 0; row < IH; row ++){
+        for(int col = 0; col < IW; col ++){
+            for(int ch = 0; ch < IC; ch ++){
                 // int dst_index = i + IW*j + IW*IH*k;
-                int dst_index = i*3 + j*IH*3 + k;
-                data[dst_index] = resizedImg.at<cv::Vec3f>(j, i)[k];
+                int dst_index = col*IC + row*IW*IC + ch;
+                assert(dst_index >= 0);
+                assert(dst_index <= IH * IW *IC);
+                data[dst_index] = resizedImg.at<cv::Vec3f>(row, col)[ch];                
             }
         }
     }
-
-    // for(int r = 0; r < 608; r ++){
-    //     for(int c = 0; c < 608; c ++){
-    //         for(int ch = 0; ch < 3; ch ++){
-    //             int dst_index = r*608*3 + c*3 + ch;
-    //             data[dst_index] = resizedImg.at<cv::Vec3f>(r, c)[ch];
-    //         }
-    //     }
-    // }
 
     // 7. Perform Inference
     infer_request.Infer();
@@ -137,16 +136,20 @@ int main(int argc, char* argv[]){
     const Blob::Ptr output_blob = infer_request.GetBlob(output_name);
     float* output_data = output_blob->buffer().as<float*>();
 
-    // for(int i = 0; i < (IH/32)*(IW/32); i ++){
-    //     if(output_data[i] > 1){
-    //         printf("%i %f\n", i,  output_data[i]);
-    //     }
+    // for(int i = 0; i < 500; i ++){
+    //     // if(output_data[i] > 1)
+    //     printf("%i %f\n", i,  output_data[i]);
+    //     // printf("%i %f\n", i,  data[i]);
     // }
-    // cout << endl;
+    cout << endl;
 
-    vector<tools::detection> dets = tools::yoloNetParseOutput(output_data, IH/32, IW/32);
+    int num = 5;
+    int classes = 80;
+    float thresh = 0.2;
+    vector<tools::detection> dets = 
+        tools::yoloNetParseOutput(output_data, IH/32, IW/32, thresh, num);
     vector<tools::detection> do_nms_sort_dets;
-    tools::do_nms_sort(dets, (IH/32)*(IW/32)*5, 80, 0.45, do_nms_sort_dets);
+    tools::do_nms_sort(dets, (IH/32)*(IW/32)*num, classes, 0.45, do_nms_sort_dets);
     tools::draw_detections(resizedImg, do_nms_sort_dets);
 
     // for(int index = 0; index < dets.size(); index++){
