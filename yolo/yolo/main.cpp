@@ -56,34 +56,23 @@ int main(int argc, char* argv[]){
     /** Taking information about a`ll topology outputs **/
     InferenceEngine::OutputsDataMap output_info(network.getOutputsInfo());
 
-    for(
-        map<string, InputInfo::Ptr>::iterator it = input_info.begin(); 
-        it != input_info.end();
-        it ++){
-        // it->second->setPrecision(Precision::FP32);
-        cout << "Input: " << it->first << endl
-            << "\tPrecision: " << it->second->getPrecision() << endl;
-        it->second->setLayout(Layout::NHWC);
-        cout << "\tDim: [ ";
-        for(auto x: it->second->getDims()){
-            cout << x << " ";
-        }
-        cout << "]" << endl;
+    // it->second->setPrecision(Precision::FP32);
+    input_info.begin()->second->setLayout(Layout::NHWC);
+    cout << "Input: " << input_info.begin()->first << endl
+        << "\tPrecision: " << input_info.begin()->second->getPrecision() << endl;
+    cout << "\tDim: [ ";
+    for(auto x: input_info.begin()->second->getDims()){
+        cout << x << " ";
     }
+    cout << "]" << endl;
 
-    for(
-        map<std::string, DataPtr>::iterator it = output_info.begin();
-        it != output_info.end();
-        it ++){
-        // it->second->setPrecision(Precision::FP32);
-        cout << "Output: " << it->first << endl
-            << "\tPrecision: " << it->second->getPrecision() << endl;
-        cout << "\tDim: [ ";
-        for(auto x: it->second->dims){
-            cout << x << " ";
-        }
-        cout << "]" << endl;
+    cout << "Output: " << output_info.begin()->first << endl
+        << "\tPrecision: " << output_info.begin()->second->getPrecision() 
+        << "\tDim: [ ";
+    for(auto x: output_info.begin()->second->dims){
+        cout << x << " ";
     }
+    cout << "]" << endl;
 
     // 4. Load the Model
     ExecutableNetwork executable_network = plugin.LoadNetwork(network, {});
