@@ -38,7 +38,7 @@ convert `.cfg` and `.weights` to `.pb`.
      "custom_attributes": {
        "classes": 80,
        "coords": 4,
-       "num": 3,
+       "num": 5,
        "do_softmax": 1
      }
    }

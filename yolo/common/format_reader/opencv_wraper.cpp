@@ -30,6 +30,7 @@ OCVReader::OCVReader(const string &filename) {
     cout << "OCVReader::OCVReader: " << filename << endl;
     img = cv::imread(filename);
     cv::imshow("Input Image", img);
+    cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
     // cv::waitKey(0);
     _size = 0;
 
