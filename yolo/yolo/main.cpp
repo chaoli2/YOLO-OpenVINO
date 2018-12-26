@@ -25,6 +25,20 @@ using namespace std;
 
 #define PLUGIN_DIR "/opt/intel/computer_vision_sdk/inference_engine/lib/ubuntu_16.04/intel64"
 
+void embed_image(const cv::Mat& source, cv::Mat& dest, int dx, int dy)
+{
+    int imh = source.size().height;
+    int imw = source.size().width;
+    for(int row = 0; row < imh; row ++){
+        for(int col = 0; col < imw; col ++){
+            for(int ch = 0; ch < 3; ch ++){
+                dest.at<cv::Vec3f>(dy + row, dx + col)[ch] = 
+                    source.at<cv::Vec3f>(row, col)[ch];
+            }
+        }
+    }
+}
+
 int main(int argc, char* argv[]){
     gflags::RegisterFlagValidator(&helper::FLAGS_image, helper::ValidateName);
     gflags::RegisterFlagValidator(&helper::FLAGS_m, helper::Validate_m);
@@ -93,17 +107,33 @@ int main(int argc, char* argv[]){
     size_t image_size = IH * IW;
 
     cv::Mat image = cv::imread(helper::FLAGS_image);
-    cv::Mat resizedImg (image);
+    cv::Mat resizedImg (IH, IW, CV_32FC3);
+    resizedImg = cv::Scalar(0.5, 0.5, 0.5);
     cv::imshow("Image", image);
     cv::waitKey(0);
     int imw = image.size().width;
     int imh = image.size().height;
-    // double resize_ratio = (double)IH / (double)max(imw, imh);
-    // cv::resize(image, resizedImg, cv::Size(imw*resize_ratio, imh*resize_ratio));
+    double resize_ratio = (double)IH / (double)max(imw, imh);
+    cv::resize(image, image, cv::Size(imw*resize_ratio, imh*resize_ratio));
+    image.convertTo(image, CV_32F, 1.0/255.0, 0);
+
+    int new_w = imw;
+    int new_h = imh;
+    if (((float)IW/imw) < ((float)IH/imh)) {
+        new_w = IW;
+        new_h = (imh * IW)/imw;
+    } else {
+        new_h = IH;
+        new_w = (imw * IW)/imh;
+    }
+    embed_image(image, resizedImg, (IW-new_w)/2, (IH-new_h)/2); 
+    cv::imshow("resize", resizedImg);
+    cv::waitKey(0);
     
-    cv::resize(image, resizedImg, cv::Size(IH, IW));
+    
+    // cv::resize(image, resizedImg, cv::Size(IH, IW));
     // cv::cvtColor(resizedImg, resizedImg, cv::COLOR_BGR2RGB);
-    resizedImg.convertTo(resizedImg, CV_32F, 1.0/255.0, 0);
+    // resizedImg.convertTo(resizedImg, CV_32F, 1.0/255.0, 0);
 
     /** Iterating over all input blobs **/
     cout << "Prepare Input: " << input_name << endl;
@@ -148,9 +178,10 @@ int main(int argc, char* argv[]){
     float thresh = 0.2;
     vector<tools::detection> dets = 
         tools::yoloNetParseOutput(output_data, IH/32, IW/32, thresh, num);
-    vector<tools::detection> do_nms_sort_dets;
-    tools::do_nms_sort(dets, (IH/32)*(IW/32)*num, classes, 0.45, do_nms_sort_dets);
-    tools::draw_detections(resizedImg, do_nms_sort_dets);
+    tools::draw_detections(resizedImg, dets);
+    // vector<tools::detection> do_nms_sort_dets;
+    // tools::do_nms_sort(dets, (IH/32)*(IW/32)*num, classes, 0.45, do_nms_sort_dets);
+    // tools::draw_detections(resizedImg, do_nms_sort_dets);
 
     // for(int index = 0; index < dets.size(); index++){
     //     if(dets[index].objectness)
