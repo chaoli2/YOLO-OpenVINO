@@ -95,9 +95,6 @@ DEFINE_string(c, "", custom_cldnn_message);
 /// It is a optional parameter
 DEFINE_string(l, "", custom_cpu_library_message);
 
-/// @brief Iterations count (default 1)
-DEFINE_int32(ni, 1, iterations_count_message);
-
 /// @brief Enable plugin messages
 DEFINE_bool(p_msg, false, plugin_message);
 
@@ -118,7 +115,6 @@ static void showUsage() {
     std::cout << "    -pp \"<path>\"            " << plugin_path_message << std::endl;
     std::cout << "    -d \"<device>\"           " << target_device_message << std::endl;
     std::cout << "    -nt \"<integer>\"         " << ntop_message << std::endl;
-    std::cout << "    -ni \"<integer>\"         " << iterations_count_message << std::endl;
     std::cout << "    -pc                     " << performance_counter_message << std::endl;
     std::cout << "    -p_msg                  " << plugin_message << std::endl;
 }
