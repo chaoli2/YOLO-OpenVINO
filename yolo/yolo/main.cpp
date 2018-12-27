@@ -48,7 +48,7 @@ struct DetectionObject {
     }
 
     bool operator<(const DetectionObject &s2) const {
-        return this->confidence < s2.confidence;
+        return this->confidence > s2.confidence;
     }
 };
 
@@ -141,7 +141,7 @@ void embed_image(const cv::Mat& source, cv::Mat& dest, int dx, int dy)
 
 cv::Mat ReadImage(const std::string& imageName, int IH, int IW, int* srcw, int* srch, float* rate, int* dx, int* dy){
     cv::Mat image = cv::imread(imageName);
-    // cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
     image.convertTo(image, CV_32F, 1.0/255.0, 0);
     *srcw = image.size().width;
     *srch = image.size().height;
