@@ -45,7 +45,8 @@
 
 using namespace std;
 using namespace InferenceEngine;
-ConsoleErrorListener error_listener;
+
+// ConsoleErrorListener error_listener;
 
 bool ParseAndCheckCommandLine(int argc, char *argv[]) {
     // ---------------------------Parsing and validating the input arguments--------------------------------------
