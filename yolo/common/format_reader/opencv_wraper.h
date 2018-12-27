@@ -36,11 +36,11 @@ namespace FormatReader {
  */
 class OCVReader : public Reader {
 private:
+    cv::Mat img;
     size_t _size;
     static Register<OCVReader> reg;
 
 public:
-    // cv::Mat img;
     /**
     * \brief Constructor of BMP reader
     * @param filename - path to input data

@@ -37,7 +37,7 @@
 #include <samples/slog.hpp>
 #include <samples/args_helper.hpp>
 
-#include "object_detection_demo_yolov1.h"
+#include "object_detection_demo_yolov2.h"
 
 #include <ext_list.hpp>
 
@@ -45,6 +45,7 @@
 
 using namespace std;
 using namespace InferenceEngine;
+
 ConsoleErrorListener error_listener;
 
 bool ParseAndCheckCommandLine(int argc, char *argv[]) {
@@ -66,11 +67,6 @@ bool ParseAndCheckCommandLine(int argc, char *argv[]) {
     return true;
 }
 
-void FrameToBlob(const cv::Mat &frame, InferRequest &inferRequest, const std::string &inputName) {
-    /* Just set input blob containing read image. Resize and layout conversion will be done automatically */
-    inferRequest.SetBlob(inputName, wrapMat2Blob(frame));
-}
-
 static int EntryIndex(int side, int lcoords, int lclasses, int location, int entry) {
     int n = location / (side * side);
     int loc = location % (side * side);
@@ -83,24 +79,16 @@ struct DetectionObject {
 
     DetectionObject(double x, double y, double h, double w, int class_id, float confidence, float h_scale, float w_scale) {
         this->xmin = static_cast<int>((x - w / 2) * w_scale);
-        this->ymin = static_cast<int>((y + h / 2) * h_scale);
-        // this->xmax = static_cast<int>(this->xmin + w * w_scale);
-        // this->ymax = static_cast<int>(this->ymin + h * h_scale);
-        this->xmax = static_cast<int>((x - w / 2) * w_scale);
-        this->ymax = static_cast<int>((y + h / 2) * h_scale);
-
-        // if(this->xmin < 0) this->xmin = 0;
-        // if(this->xmax > w_scale-1) this->xmax = w_scale-1;
-        // if(this->ymin < 0) this->ymin = 0;
-        // if(this->ymax > h_scale-1) this->ymax = h_scale-1;
+        this->ymin = static_cast<int>((y - h / 2) * h_scale);
+        this->xmax = static_cast<int>(this->xmin + w * w_scale);
+        this->ymax = static_cast<int>(this->ymin + h * h_scale);
 
         this->class_id = class_id;
         this->confidence = confidence;
-        // printf("[%f, %f] -- [%f, %f] -- id: %i\n", x, y, w, h, class_id);
     }
 
     bool operator<(const DetectionObject &s2) const {
-        return this->confidence < s2.confidence;
+        return this->confidence > s2.confidence;
     }
 };
 
@@ -126,7 +114,6 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
     const int out_blob_h = resized_im_h / 32;
     const int out_blob_w = resized_im_w / 32;
     // --------------------------- Extracting layer parameters -------------------------------------
-    // auto num = layer->GetParamAsInt("num");
     auto num = 5;
     auto coords = 4;
     auto classes = 80;
@@ -141,10 +128,6 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
     auto side_square = side * side;
     const float *output_blob = blob->buffer().as<PrecisionTrait<Precision::FP32>::value_type *>();
 
-    for(int i = 0; i < 100; i ++){
-        // if(output_blob[i] < 0)
-        printf("%i %f\n", i,  output_blob[i]);
-    }
     // --------------------------- Parsing YOLO Region output -------------------------------------
     for (int i = 0; i < side_square; ++i) {
         int row = i / side;
@@ -153,18 +136,13 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
             int obj_index = EntryIndex(side, coords, classes, n * side * side + i, coords);
             int box_index = EntryIndex(side, coords, classes, n * side * side + i, 0);
             float scale = output_blob[obj_index];
-            // printf("obj_index: %i \tbox_index: %i \tscale: %f\n", obj_index, box_index, scale);
             if (scale < threshold)
                 continue;
             
-            float x = (col + output_blob[box_index + 0 * side_square]) / side * resized_im_w;
-            float y = (row + output_blob[box_index + 1 * side_square]) / side * resized_im_h;
-            // float height = std::exp(output_blob[box_index + 3 * side_square]);
-            // float width  = std::exp(output_blob[box_index + 2 * side_square]);
-            // float height = std::exp(output_blob[box_index + 3 * side_square]) * anchors[2 * n + 1];
-            // float width  = std::exp(output_blob[box_index + 2 * side_square]) * anchors[2 * n];
-            float height = std::exp(output_blob[box_index + 3 * side_square]) / side * anchors[2 * n + 1];
-            float width  = std::exp(output_blob[box_index + 2 * side_square]) / side * anchors[2 * n];
+            float x = (col + output_blob[box_index + 0 * side_square]) / side * original_im_w;
+            float y = (row + output_blob[box_index + 1 * side_square]) / side * original_im_h;
+            float height = std::exp(output_blob[box_index + 3 * side_square]) * anchors[2 * n + 1] / side * original_im_h;
+            float width  = std::exp(output_blob[box_index + 2 * side_square]) * anchors[2 * n] / side * original_im_w;
             for (int j = 0; j < classes; ++j) {
                 int class_index = EntryIndex(side, coords, classes, n * side_square + i, coords + 1 + j);
                 float prob = scale * output_blob[class_index];
@@ -179,6 +157,49 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
     }
 }
 
+void embed_image(const cv::Mat& source, cv::Mat& dest, int dx, int dy)
+{
+    int imh = source.size().height;
+    int imw = source.size().width;
+    for(int row = 0; row < imh; row ++){
+        for(int col = 0; col < imw; col ++){
+            for(int ch = 0; ch < 3; ch ++){
+                dest.at<cv::Vec3f>(dy + row, dx + col)[ch] = 
+                    source.at<cv::Vec3f>(row, col)[ch];
+            }
+        }
+    }
+}
+
+cv::Mat ReadImage(const std::string& imageName, int IH, int IW, int* srcw, int* srch, float* rate, int* dx, int* dy){
+    cv::Mat image = cv::imread(imageName);
+    image.convertTo(image, CV_32F, 1.0/255.0, 0);
+    *srcw = image.size().width;
+    *srch = image.size().height;
+    cv::Mat resizedImg (IH, IW, CV_32FC3);
+    resizedImg = cv::Scalar(0.5, 0.5, 0.5);
+    int imw = image.size().width;
+    int imh = image.size().height;
+    float resize_ratio = (float)IH / (float)max(imw, imh);
+    *rate = resize_ratio;
+    cv::resize(image, image, cv::Size(imw*resize_ratio, imh*resize_ratio));
+
+    int new_w = imw;
+    int new_h = imh;
+    if (((float)IW/imw) < ((float)IH/imh)) {
+        new_w = IW;
+        new_h = (imh * IW)/imw;
+    } else {
+        new_h = IH;
+        new_w = (imw * IW)/imh;
+    }
+    *dx = (IW-new_w)/2;
+    *dy = (IH-new_h)/2;
+    embed_image(image, resizedImg, (IW-new_w)/2, (IH-new_h)/2);
+    cv::cvtColor(resizedImg, resizedImg, cv::COLOR_BGR2RGB);
+    return resizedImg;
+}
+
 int main(int argc, char *argv[]) {
     try {
         std::cout << "InferenceEngine: " << GetInferenceEngineVersion() << std::endl;
@@ -187,11 +208,6 @@ int main(int argc, char *argv[]) {
         if (!ParseAndCheckCommandLine(argc, argv)) {
             return 0;
         }
-
-        /** This vector stores paths to the processed images **/
-        std::vector<std::string> imageNames;
-        parseInputFilesArguments(imageNames);
-        if (imageNames.empty()) throw std::logic_error("No suitable images were found");
 
         // --------------------------- 1. Load Plugin for inference engine -------------------------------------
         slog::info << "Loading plugin" << slog::endl;
@@ -259,23 +275,20 @@ int main(int argc, char *argv[]) {
 
         auto inputInfoItem = *inputInfo.begin();
         auto inputName = inputInfo.begin()->first;
-
+        int IC = inputInfoItem.second->getTensorDesc().getDims()[1];
+        int IH = inputInfoItem.second->getTensorDesc().getDims()[2];
+        int IW = inputInfoItem.second->getTensorDesc().getDims()[3];
         /** Specifying the precision and layout of input data provided by the user.
          * This should be called before load of the network to the plugin **/
-        // inputInfoItem.second->setPrecision(Precision::U8);
         inputInfoItem.second->setPrecision(Precision::FP32);
-        // inputInfoItem.second->getPreProcess().setResizeAlgorithm(ResizeAlgorithm::RESIZE_BILINEAR);
-        // inputInfoItem.second->getInputData()->setLayout(Layout::NHWC);
-        inputInfoItem.second->getInputData()->setLayout(Layout::NCHW);
-        cv::Mat image = cv::imread(imageNames.at(0));
-        // image.convertTo(image, CV_32F, 1.0/255.0, 0);
-        const size_t width  = (size_t) image.size().width;
-        const size_t height = (size_t) image.size().height;
-        cv::imshow("Image", image);
-        cv::waitKey(0);
-        cv::resize(image, image, cv::Size(608, 608));
-        // cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+        inputInfoItem.second->getInputData()->setLayout(Layout::NHWC);
 
+        float rate = 0;
+        int dx = 0;
+        int dy = 0;
+        int srcw = 0;
+        int srch = 0;
+        cv::Mat image = ReadImage(FLAGS_i, IH, IW, &srcw, &srch, &rate, &dx, &dy);
         /** Setting batch size using image count **/
         network.setBatchSize(1);
         size_t batchSize = network.getBatchSize();
@@ -310,22 +323,18 @@ int main(int argc, char *argv[]) {
         // -----------------------------------------------------------------------------------------------------
         // --------------------------- 6. Prepare input --------------------------------------------------------
         /** Iterate over all the input blobs **/
-        // FrameToBlob(image, infer_request, inputName);
         for (const auto & item : inputInfo) {
             /** Creating input blob **/
             Blob::Ptr input = infer_request.GetBlob(item.first);
             /** Filling input tensor with images. First b channel, then g and r channels **/
             size_t num_channels = input->getTensorDesc().getDims()[1];
             size_t image_size = input->getTensorDesc().getDims()[2] * input->getTensorDesc().getDims()[3];
-            // auto data = input->buffer().as<PrecisionTrait<Precision::U8>::value_type*>();
             auto data = input->buffer().as<PrecisionTrait<Precision::FP32>::value_type*>();
-            /** Iterate over all input images **/
-            for(int k = 0; k < 3; k++){
-                for(int j = 0; j < 416; j++){
-                    for(int i = 0; i < 416; i++){
-                        // int dst_index = i + 608*j + 608*608*k;
-                        int dst_index = i*3 + j*416*3 + k;
-                        data[dst_index] = image.at<cv::Vec3b>(j, i)[k]/255.0;
+            for(int row = 0; row < IH; row ++){
+                for(int col = 0; col < IW; col ++){
+                    for(int ch = 0; ch < IC; ch ++){
+                        int dst_index = col*IC + row*IW*IC + ch;
+                        data[dst_index] = image.at<cv::Vec3f>(row, col)[ch];                
                     }
                 }
             }
@@ -334,36 +343,29 @@ int main(int argc, char *argv[]) {
         // -----------------------------------------------------------------------------------------------------
 
         // --------------------------- 7. Do inference ---------------------------------------------------------
-
-        typedef std::chrono::high_resolution_clock Time;
-        typedef std::chrono::duration<double, std::ratio<1, 1000>> ms;
-        typedef std::chrono::duration<float> fsec;
-
-        double total = 0.0;
-        /** Start inference & calc performance **/
-        for (int iter = 0; iter < FLAGS_ni; ++iter) {
-            auto t0 = Time::now();
-            infer_request.Infer();
-            auto t1 = Time::now();
-            fsec fs = t1 - t0;
-            ms d = std::chrono::duration_cast<ms>(fs);
-            total += d.count();
-        }
+        /** Start inference **/
+        infer_request.Infer();
         // -----------------------------------------------------------------------------------------------------
 
         // --------------------------- 8. Process output -------------------------------------------------------
         slog::info << "Processing output blobs" << slog::endl;
-        unsigned long resized_im_h = 608;
-        unsigned long resized_im_w = 608;
         std::vector<DetectionObject> objects;
         // Parsing outputs
         for (auto &output : outputInfo) {
             auto output_name = output.first;
             Blob::Ptr blob = infer_request.GetBlob(output_name);
-            ParseYOLOV2Output(blob, resized_im_h, resized_im_w, resized_im_h, resized_im_w, 0.5, objects);
+            ParseYOLOV2Output(blob, IH, IW, IH, IW, 0.5, objects);
         }
 
-        cout << "objects size: " << objects.size() << endl;
+        // Filtering overlapping boxes
+        std::sort(objects.begin(), objects.end());
+        for (int i = 0; i < objects.size(); ++i) {
+            if (objects[i].confidence == 0)
+                continue;
+            for (int j = i + 1; j < objects.size(); ++j)
+                if (IntersectionOverUnion(objects[i], objects[j]) >= 0.45)
+                    objects[j].confidence = 0;
+        }
 
         // Drawing boxes
         for (auto &object : objects) {
@@ -372,16 +374,20 @@ int main(int argc, char *argv[]) {
             auto label = object.class_id;
             float confidence = object.confidence;
             if (confidence > 0.5) {
-                // std::cout << "[" << label << "] element, prob = " << confidence <<
-                //             "    (" << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
-                //             << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
+                std::cout << "[" << label << "] element, prob = " << confidence <<
+                            "    (" << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
+                            << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
                 /** Drawing only objects when >confidence_threshold probability **/
                 std::ostringstream conf;
                 conf << ":" << std::fixed << std::setprecision(3) << confidence;
                 cv::rectangle(image, cv::Point2f(object.xmin, object.ymin), cv::Point2f(object.xmax, object.ymax), cv::Scalar(0, 0, 255));
             }
         }
-        cv::imshow("Detection results", image);
+        cv::Rect ROI(dx, dy, srcw*rate, srch*rate);
+        cv::Mat croppedImage = image(ROI);
+        cv::resize(croppedImage, croppedImage, cv::Size(srcw, srch));
+        cv::cvtColor(croppedImage, croppedImage, cv::COLOR_BGR2RGB);
+        cv::imshow("Detection results", croppedImage);
         cv::waitKey(0);
 
     }
