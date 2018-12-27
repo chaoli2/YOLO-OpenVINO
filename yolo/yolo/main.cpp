@@ -29,6 +29,7 @@ void embed_image(const cv::Mat& source, cv::Mat& dest, int dx, int dy)
 {
     int imh = source.size().height;
     int imw = source.size().width;
+    cout << "dx: " << dx << " dy: " << dy << endl;
     for(int row = 0; row < imh; row ++){
         for(int col = 0; col < imw; col ++){
             for(int ch = 0; ch < 3; ch ++){
@@ -127,13 +128,6 @@ int main(int argc, char* argv[]){
         new_w = (imw * IW)/imh;
     }
     embed_image(image, resizedImg, (IW-new_w)/2, (IH-new_h)/2); 
-    cv::imshow("resize", resizedImg);
-    cv::waitKey(0);
-    
-    
-    // cv::resize(image, resizedImg, cv::Size(IH, IW));
-    // cv::cvtColor(resizedImg, resizedImg, cv::COLOR_BGR2RGB);
-    // resizedImg.convertTo(resizedImg, CV_32F, 1.0/255.0, 0);
 
     /** Iterating over all input blobs **/
     cout << "Prepare Input: " << input_name << endl;
@@ -166,44 +160,13 @@ int main(int argc, char* argv[]){
     const Blob::Ptr output_blob = infer_request.GetBlob(output_name);
     float* output_data = output_blob->buffer().as<float*>();
 
-    // for(int i = 0; i < 500; i ++){
-    //     // if(output_data[i] > 1)
-    //     printf("%i %f\n", i,  output_data[i]);
-    //     // printf("%i %f\n", i,  data[i]);
-    // }
-    cout << endl;
-
     int num = 5;
     int classes = 80;
     float thresh = 0.2;
     vector<tools::detection> dets = 
         tools::yoloNetParseOutput(output_data, IH/32, IW/32, thresh, num);
-    tools::draw_detections(resizedImg, dets);
+    tools::draw_detections(resizedImg, dets, (IW-new_w)/2, (IH-new_h)/2, imw, imh, resize_ratio);
     // vector<tools::detection> do_nms_sort_dets;
     // tools::do_nms_sort(dets, (IH/32)*(IW/32)*num, classes, 0.45, do_nms_sort_dets);
-    // tools::draw_detections(resizedImg, do_nms_sort_dets);
-
-    // for(int index = 0; index < dets.size(); index++){
-    //     if(dets[index].objectness)
-    //     printf("[%f, %f]-[%f, %f] score:%f \n", 
-    //                 dets[index].bbox.x, dets[index].bbox.y,
-    //                 dets[index].bbox.w, dets[index].bbox.h,
-    //                 dets[index].objectness);
-    // }
-
-    // for(int i = 0; i < 10; i++){
-    //     cout << output_data[i] << " ";
-    // }
-    // cout << endl;
-    // vector<helper::object::Box> Boxes = tools::yoloNetParseOutput(output_data);
-
-    // for(int i = 0; i < 5; i ++){
-    //     cv::Point2d p1 (Boxes[i].left, Boxes[i].top);
-    //     cv::Point2d p2 (Boxes[i].right, Boxes[i].bot);
-    //     cv::rectangle(resizedImg, p1, p2, cv::Scalar(255, 255, 255));
-    // }
-    // cv::cvtColor(resizedImg, resizedImg, cv::COLOR_RGB2BGR);
-    // cv::resize(resizedImg, resizedImg, cv::Size(imw, imh));
-    // cv::imshow("output", resizedImg);
-    // cv::waitKey(0);
+    // tools::draw_detections(resizedImg, do_nms_sort_dets, (IW-new_w)/2, (IH-new_h)/2, imw, imh, resize_ratio);
 }

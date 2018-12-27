@@ -40,13 +40,6 @@ typedef struct detection{
 int entry_index(int OH, int OW, int location, int entry){
     int n =   location / (OW*OH);
     int loc = location % (OW*OH);
-    // printf("l.w: %i l.h: %i l.coords: %i loc: %i entry: %i return: %i\n",
-    //     OH,
-    //     OW,
-    //     4,
-    //     location,
-    //     entry,
-    //     n*OW*OH*(4+80+1) + entry*OW*OH + loc);
     return n*OW*OH*(4+80+1) + entry*OW*OH + loc;
 }
 
@@ -112,15 +105,6 @@ vector<detection> yoloNetParseOutput(
             float scale = output_data[obj_index];
             dets[index].bbox = get_region_box(output_data, n, box_index, col, row, OW, OH, OW*OH);
             dets[index].objectness = scale > thresh ? scale : 0;
-            // if(dets[index].objectness)
-            // printf("scale:%f [%f, %f]-[%f, %f] score:%f obj_idx:%i box_idx:%i\n", 
-            //     scale, 
-            //     dets[index].bbox.x, dets[index].bbox.y,
-            //     dets[index].bbox.w, dets[index].bbox.h,
-            //     dets[index].objectness,
-            //     obj_index,
-            //     box_index);
-
 
             int class_index = entry_index(OH, OW, n*OW*OH + i, 4 + 1);
             if(dets[index].objectness){
@@ -131,27 +115,22 @@ vector<detection> yoloNetParseOutput(
                     assert(prob <= 1);
                     dets[index].prob[j] = (prob > thresh) ? prob : 0;
                 }
-                // printf("scale:%f [%f, %f]-[%f, %f] score:%f obj_idx:%i box_idx:%i\n", 
-                //     scale, 
-                //     dets[index].bbox.x, dets[index].bbox.y,
-                //     dets[index].bbox.w, dets[index].bbox.h,
-                //     dets[index].objectness,
-                //     obj_index,
-                //     box_index);
             }
         }
 
     }
 
-    // for(int index = 0; index < 19*19*5; index++){
-    //     if(dets[index].objectness > 0.4){
-    //         printf("[%f, %f]-[%f, %f] score:%f\n", 
+    correct_region_boxes(dets, OW*OH*num, 1, 1, OW, OH, 0);
+    // for(int index = 0; index < OH*OW*num; index++){
+    //     if(dets[index].objectness > thresh){
+    //         printf("[%f, %f]-[%f, %f] score:%f classes: %i sort_class: %i\n", 
     //             dets[index].bbox.x, dets[index].bbox.y,
     //             dets[index].bbox.w, dets[index].bbox.h,
-    //             dets[index].objectness);
+    //             dets[index].objectness,
+    //             dets[index].classes,
+    //             dets[index].sort_class);
     //     }
     // }
-    correct_region_boxes(dets, OW*OH*num, 1, 1, OW, OH, 0);
 
 
     return dets;
@@ -210,6 +189,8 @@ void do_nms_sort(vector<tools::detection>& src_dets, int total, int classes,
         }
     }
 
+    cout << "dets.size(): " << dets.size() << endl;
+
     for(int k = 0; k < classes; ++k){
         for(int i = 0; i < dets.size(); ++i){
             dets[i].sort_class = k;
@@ -234,7 +215,7 @@ void do_nms_sort(vector<tools::detection>& src_dets, int total, int classes,
 
 }
 
-void draw_detections(cv::Mat im, vector<tools::detection>& dets){
+void draw_detections(cv::Mat im, vector<tools::detection>& dets, int dx, int dy, int imw, int imh, float r){
     
     for(int i = 0; i < dets.size(); i++){
         if(dets[i].objectness){
@@ -259,7 +240,6 @@ void draw_detections(cv::Mat im, vector<tools::detection>& dets){
                 if(top < 0) top = 0;
                 if(bot > im.size().height-1) bot = im.size().height-1;
 
-                // printf("Box[%i] [%i, %i] -> [%i, %i]\n", i, left, top, right, bot);
                 cv::Point2d p1 (left, top);
                 cv::Point2d p2 (right, bot);
                 cv::rectangle(im, p1, p2, cv::Scalar(255, 0, 0), 2);
@@ -268,7 +248,12 @@ void draw_detections(cv::Mat im, vector<tools::detection>& dets){
         }
     }
     // cv::cvtColor(im, im, cv::COLOR_RGB2BGR);
-    cv::imshow("output", im);
+
+    // Setup a rectangle to define your region of interest
+    cv::Rect myROI(dx, dy, imw*r, imh*r);
+    cv::Mat croppedImage = im(myROI);
+    cv::resize(croppedImage, croppedImage, cv::Size(imw, imh));
+    cv::imshow("Output", croppedImage);
     cv::waitKey(0);
 
 
