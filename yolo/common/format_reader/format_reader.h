@@ -23,8 +23,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <opencv2/opencv.hpp>
+#include<iostream>
 
 #ifdef _WIN32
     #define FORMAT_READER_API(TYPE) extern "C"   __declspec(dllexport)  TYPE __cdecl
@@ -48,9 +47,6 @@ protected:
     std::shared_ptr<unsigned char> _data;
 
 public:
-    cv::Mat img;
-    int resized_w;
-    int resized_h;
     /**
      * \brief Get width
      * @return width

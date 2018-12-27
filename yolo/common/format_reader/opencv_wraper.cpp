@@ -27,11 +27,7 @@ using namespace std;
 using namespace FormatReader;
 
 OCVReader::OCVReader(const string &filename) {
-    cout << "OCVReader::OCVReader: " << filename << endl;
     img = cv::imread(filename);
-    cv::imshow("Input Image", img);
-    cv::cvtColor(img, img, cv::COLOR_BGR2RGB);
-    // cv::waitKey(0);
     _size = 0;
 
     if (img.empty()) {
@@ -48,18 +44,12 @@ std::shared_ptr<unsigned char> OCVReader::getData(int width = 0, int height = 0)
     if (width != 0 && height != 0) {
         int iw = img.size().width;
         int ih = img.size().height;
-        double resize_ratio = (double)width / (double)max(iw, ih);
-        resized_w = resize_ratio * iw;
-        resized_h = resize_ratio * ih;
         if (width != iw || height != ih) {
-            slog::warn << "Image is resized from (" << iw << ", " << ih << ") to (" 
-                       << resized_w << ", " << resized_h << ")" << slog::endl;
+            slog::warn << "Image is resized from (" << iw << ", " << ih << ") to (" << width << ", " << height << ")" << slog::endl;
         }
-        cv::resize(img, resized, cv::Size(resized_w, resized_h));
+        cv::resize(img, resized, cv::Size(width, height));
     }
 
-    cv::imshow("Resized Image", resized);
-    cv::waitKey(0);
     size_t size = resized.size().width * resized.size().height * resized.channels();
     _data.reset(new unsigned char[size], std::default_delete<unsigned char[]>());
     for (size_t id = 0; id < size; ++id) {
