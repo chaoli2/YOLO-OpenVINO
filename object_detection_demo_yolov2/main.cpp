@@ -129,9 +129,9 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
     auto side_square = side * side;
     const float *output_blob = blob->buffer().as<PrecisionTrait<Precision::FP32>::value_type *>();
 
-    for(int i = 0; i < 100; i ++){
-        printf("%i - %f\n", i, output_blob[i]);
-    }
+    // for(int i = 0; i < 100; i ++){
+    //     printf("%i - %f\n", i, output_blob[i]);
+    // }
 
     // --------------------------- Parsing YOLO Region output -------------------------------------
     for (int i = 0; i < side_square; ++i) {
@@ -180,7 +180,6 @@ void embed_image(const cv::Mat& source, cv::Mat& dest, int dx, int dy)
 
 cv::Mat ReadImage(const std::string& imageName, int IH, int IW, int* srcw, int* srch, float* rate, int* dx, int* dy){
     cv::Mat image = cv::imread(imageName);
-    // cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
     image.convertTo(image, CV_32F, 1.0/255.0, 0);
     *srcw = image.size().width;
     *srch = image.size().height;
@@ -204,6 +203,7 @@ cv::Mat ReadImage(const std::string& imageName, int IH, int IW, int* srcw, int* 
     *dx = (IW-new_w)/2;
     *dy = (IH-new_h)/2;
     embed_image(image, resizedImg, (IW-new_w)/2, (IH-new_h)/2);
+    // cv::cvtColor(resizedImg, resizedImg, cv::COLOR_BGR2RGB);
     return resizedImg;
 }
 
@@ -217,9 +217,9 @@ int main(int argc, char *argv[]) {
         }
 
         /** This vector stores paths to the processed images **/
-        // std::vector<std::string> imageNames;
-        // parseInputFilesArguments(imageNames);
-        // if (imageNames.empty()) throw std::logic_error("No suitable images were found");
+        std::vector<std::string> imageNames;
+        parseInputFilesArguments(imageNames);
+        if (imageNames.empty()) throw std::logic_error("No suitable images were found");
 
         // --------------------------- 1. Load Plugin for inference engine -------------------------------------
         slog::info << "Loading plugin" << slog::endl;
@@ -294,13 +294,38 @@ int main(int argc, char *argv[]) {
          * This should be called before load of the network to the plugin **/
         inputInfoItem.second->setPrecision(Precision::FP32);
         inputInfoItem.second->getInputData()->setLayout(Layout::NHWC);
+        // inputInfoItem.second->setPrecision(Precision::U8);
+        // inputInfoItem.second->setLayout(Layout::NCHW);
+
+        ///////////////////////////////////////////////////////////
+        std::vector<std::shared_ptr<unsigned char>> imagesData, orig_img_data;
+        std::vector<int> imageWidths, imageHeights;
+        for (auto & i : imageNames) {
+            FormatReader::ReaderPtr reader(i.c_str());
+            if (reader.get() == nullptr) {
+                slog::warn << "Image " + i + " cannot be read!" << slog::endl;
+                continue;
+            }
+            /** Store image data **/
+            std::shared_ptr<unsigned char> originalData(reader->getData());
+
+            std::shared_ptr<unsigned char> data(
+                    reader->getData(inputInfoItem.second->getTensorDesc().getDims()[3],
+                                    inputInfoItem.second->getTensorDesc().getDims()[2]));
+            if (data.get() != nullptr) {
+                orig_img_data.push_back(originalData);
+                imagesData.push_back(data);
+                imageWidths.push_back(reader->width());
+                imageHeights.push_back(reader->height());
+            }
+        }
+
         float rate = 0;
         int dx = 0;
         int dy = 0;
         int srcw = 0;
         int srch = 0;
         cv::Mat image = ReadImage(FLAGS_i, IH, IW, &srcw, &srch, &rate, &dx, &dy);
-
         /** Setting batch size using image count **/
         network.setBatchSize(1);
         size_t batchSize = network.getBatchSize();
@@ -341,7 +366,6 @@ int main(int argc, char *argv[]) {
             /** Filling input tensor with images. First b channel, then g and r channels **/
             size_t num_channels = input->getTensorDesc().getDims()[1];
             size_t image_size = input->getTensorDesc().getDims()[2] * input->getTensorDesc().getDims()[3];
-            // auto data = input->buffer().as<PrecisionTrait<Precision::U8>::value_type*>();
             auto data = input->buffer().as<PrecisionTrait<Precision::FP32>::value_type*>();
             for(int row = 0; row < IH; row ++){
                 for(int col = 0; col < IW; col ++){
@@ -351,6 +375,19 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
+
+            /** Iterate over all input images **/
+            // auto data = input->buffer().as<PrecisionTrait<Precision::U8>::value_type*>();
+            // for (size_t image_id = 0; image_id < imagesData.size(); ++image_id) {
+            //     /** Iterate over all pixel in image (b,g,r) **/
+            //     for (size_t pid = 0; pid < image_size; pid++) {
+            //         /** Iterate over all channels **/
+            //         for (size_t ch = 0; ch < num_channels; ++ch) {
+            //             /**[images stride + channels stride + pixel id ] all in bytes**/
+            //             data[image_id * image_size * num_channels + ch * image_size + pid ] = imagesData.at(image_id).get()[pid*num_channels + ch];
+            //         }
+            //     }
+            // }
         }
         inputInfo = {};
         // -----------------------------------------------------------------------------------------------------
@@ -385,42 +422,44 @@ int main(int argc, char *argv[]) {
 
         // Filtering overlapping boxes
         std::sort(objects.begin(), objects.end());
-        for (int i = 0; i < objects.size(); ++i) {
-            if (objects[i].confidence == 0)
-                continue;
-            for (int j = i + 1; j < objects.size(); ++j)
-                if (IntersectionOverUnion(objects[i], objects[j]) >= 0.45)
-                    objects[j].confidence = 0;
-        }
-
         // for (int i = 0; i < objects.size(); ++i) {
-        //     printf("classID: %i confi: %f\n",
-        //         objects[i].class_id,
-        //         objects[i].confidence);
+        //     if (objects[i].confidence == 0)
+        //         continue;
+        //     for (int j = i + 1; j < objects.size(); ++j)
+        //         if (IntersectionOverUnion(objects[i], objects[j]) >= 0.45)
+        //             objects[j].confidence = 0;
         // }
 
+        for (int i = 0; i < objects.size(); i++) {
+            std::cout << "[" << i << "," << objects[i].class_id
+                             << "] element, prob = " << objects[i].confidence <<
+                     "    (" << objects[i].xmin << ","
+                             << objects[i].ymin << ")-("
+                             << objects[i].xmax << ","
+                             << objects[i].ymax << ")" << std::endl;
+        }       
+
         // Drawing boxes
-        
-        for (auto &object : objects) {
-            if (object.confidence < 0.5)
-                continue;
-            auto label = object.class_id;
-            float confidence = object.confidence;
-            if (confidence > 0.5) {
-                std::cout << "[" << label << "] element, prob = " << confidence <<
-                            "    (" << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
-                            << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
-                /** Drawing only objects when >confidence_threshold probability **/
-                std::ostringstream conf;
-                conf << ":" << std::fixed << std::setprecision(3) << confidence;
-                cv::rectangle(image, cv::Point2f(object.xmin, object.ymin), cv::Point2f(object.xmax, object.ymax), cv::Scalar(0, 0, 255));
-            }
-        }
-        cv::Rect ROI(dx, dy, srcw*rate, srch*rate);
-        cv::Mat croppedImage = image(ROI);
-        cv::resize(croppedImage, croppedImage, cv::Size(srcw, srch));
-        cv::imshow("Detection results", croppedImage);
-        cv::waitKey(0);
+        // for (auto &object : objects) {
+        //     if (object.confidence < 0.5)
+        //         continue;
+        //     auto label = object.class_id;
+        //     float confidence = object.confidence;
+        //     if (confidence > 0.5) {
+        //         std::cout << "[" << label << "] element, prob = " << confidence <<
+        //                     "    (" << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
+        //                     << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
+        //         /** Drawing only objects when >confidence_threshold probability **/
+        //         std::ostringstream conf;
+        //         conf << ":" << std::fixed << std::setprecision(3) << confidence;
+        //         cv::rectangle(image, cv::Point2f(object.xmin, object.ymin), cv::Point2f(object.xmax, object.ymax), cv::Scalar(0, 0, 255));
+        //     }
+        // }
+        // cv::Rect ROI(dx, dy, srcw*rate, srch*rate);
+        // cv::Mat croppedImage = image(ROI);
+        // cv::resize(croppedImage, croppedImage, cv::Size(srcw, srch));
+        // cv::imshow("Detection results", croppedImage);
+        // cv::waitKey(0);
 
     }
     catch (const std::exception& error) {

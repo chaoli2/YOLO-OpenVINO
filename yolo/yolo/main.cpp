@@ -160,6 +160,10 @@ int main(int argc, char* argv[]){
     const Blob::Ptr output_blob = infer_request.GetBlob(output_name);
     float* output_data = output_blob->buffer().as<float*>();
 
+    for(int i = 0; i < 100; i ++){
+        // if(output_blob[i] < 0)
+        printf("%i %f\n", i,  output_data[i]);
+    }
     int num = 5;
     int classes = 80;
     float thresh = 0.2;
