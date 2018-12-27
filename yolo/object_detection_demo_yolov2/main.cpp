@@ -46,7 +46,7 @@
 using namespace std;
 using namespace InferenceEngine;
 
-// ConsoleErrorListener error_listener;
+ConsoleErrorListener error_listener;
 
 bool ParseAndCheckCommandLine(int argc, char *argv[]) {
     // ---------------------------Parsing and validating the input arguments--------------------------------------
@@ -85,11 +85,10 @@ struct DetectionObject {
 
         this->class_id = class_id;
         this->confidence = confidence;
-        // printf("[%f, %f] -- [%f, %f] -- id: %i confi: %f\n", x, y, w, h, class_id, confidence);
     }
 
     bool operator<(const DetectionObject &s2) const {
-        return this->confidence < s2.confidence;
+        return this->confidence > s2.confidence;
     }
 };
 
@@ -115,7 +114,6 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
     const int out_blob_h = resized_im_h / 32;
     const int out_blob_w = resized_im_w / 32;
     // --------------------------- Extracting layer parameters -------------------------------------
-    // auto num = layer->GetParamAsInt("num");
     auto num = 5;
     auto coords = 4;
     auto classes = 80;
@@ -130,10 +128,6 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
     auto side_square = side * side;
     const float *output_blob = blob->buffer().as<PrecisionTrait<Precision::FP32>::value_type *>();
 
-    // for(int i = 0; i < 100; i ++){
-    //     printf("%i - %f\n", i, output_blob[i]);
-    // }
-
     // --------------------------- Parsing YOLO Region output -------------------------------------
     for (int i = 0; i < side_square; ++i) {
         int row = i / side;
@@ -142,7 +136,6 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
             int obj_index = EntryIndex(side, coords, classes, n * side * side + i, coords);
             int box_index = EntryIndex(side, coords, classes, n * side * side + i, 0);
             float scale = output_blob[obj_index];
-            // printf("obj_index: %i \tbox_index: %i \tscale: %f\n", obj_index, box_index, scale);
             if (scale < threshold)
                 continue;
             
@@ -150,7 +143,6 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
             float y = (row + output_blob[box_index + 1 * side_square]) / side * original_im_h;
             float height = std::exp(output_blob[box_index + 3 * side_square]) * anchors[2 * n + 1] / side * original_im_h;
             float width  = std::exp(output_blob[box_index + 2 * side_square]) * anchors[2 * n] / side * original_im_w;
-            // cout << "[" << x << ", " << y << "] - [" << width << ", " << height << "]" << endl;
             for (int j = 0; j < classes; ++j) {
                 int class_index = EntryIndex(side, coords, classes, n * side_square + i, coords + 1 + j);
                 float prob = scale * output_blob[class_index];
@@ -204,7 +196,7 @@ cv::Mat ReadImage(const std::string& imageName, int IH, int IW, int* srcw, int* 
     *dx = (IW-new_w)/2;
     *dy = (IH-new_h)/2;
     embed_image(image, resizedImg, (IW-new_w)/2, (IH-new_h)/2);
-    // cv::cvtColor(resizedImg, resizedImg, cv::COLOR_BGR2RGB);
+    cv::cvtColor(resizedImg, resizedImg, cv::COLOR_BGR2RGB);
     return resizedImg;
 }
 
@@ -423,44 +415,36 @@ int main(int argc, char *argv[]) {
 
         // Filtering overlapping boxes
         std::sort(objects.begin(), objects.end());
-        // for (int i = 0; i < objects.size(); ++i) {
-        //     if (objects[i].confidence == 0)
-        //         continue;
-        //     for (int j = i + 1; j < objects.size(); ++j)
-        //         if (IntersectionOverUnion(objects[i], objects[j]) >= 0.45)
-        //             objects[j].confidence = 0;
-        // }
-
-        for (int i = 0; i < objects.size(); i++) {
-            std::cout << "[" << i << "," << objects[i].class_id
-                             << "] element, prob = " << objects[i].confidence <<
-                     "    (" << objects[i].xmin << ","
-                             << objects[i].ymin << ")-("
-                             << objects[i].xmax << ","
-                             << objects[i].ymax << ")" << std::endl;
-        }       
+        for (int i = 0; i < objects.size(); ++i) {
+            if (objects[i].confidence == 0)
+                continue;
+            for (int j = i + 1; j < objects.size(); ++j)
+                if (IntersectionOverUnion(objects[i], objects[j]) >= 0.45)
+                    objects[j].confidence = 0;
+        }
 
         // Drawing boxes
-        // for (auto &object : objects) {
-        //     if (object.confidence < 0.5)
-        //         continue;
-        //     auto label = object.class_id;
-        //     float confidence = object.confidence;
-        //     if (confidence > 0.5) {
-        //         std::cout << "[" << label << "] element, prob = " << confidence <<
-        //                     "    (" << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
-        //                     << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
-        //         /** Drawing only objects when >confidence_threshold probability **/
-        //         std::ostringstream conf;
-        //         conf << ":" << std::fixed << std::setprecision(3) << confidence;
-        //         cv::rectangle(image, cv::Point2f(object.xmin, object.ymin), cv::Point2f(object.xmax, object.ymax), cv::Scalar(0, 0, 255));
-        //     }
-        // }
-        // cv::Rect ROI(dx, dy, srcw*rate, srch*rate);
-        // cv::Mat croppedImage = image(ROI);
-        // cv::resize(croppedImage, croppedImage, cv::Size(srcw, srch));
-        // cv::imshow("Detection results", croppedImage);
-        // cv::waitKey(0);
+        for (auto &object : objects) {
+            if (object.confidence < 0.5)
+                continue;
+            auto label = object.class_id;
+            float confidence = object.confidence;
+            if (confidence > 0.5) {
+                std::cout << "[" << label << "] element, prob = " << confidence <<
+                            "    (" << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
+                            << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
+                /** Drawing only objects when >confidence_threshold probability **/
+                std::ostringstream conf;
+                conf << ":" << std::fixed << std::setprecision(3) << confidence;
+                cv::rectangle(image, cv::Point2f(object.xmin, object.ymin), cv::Point2f(object.xmax, object.ymax), cv::Scalar(0, 0, 255));
+            }
+        }
+        cv::Rect ROI(dx, dy, srcw*rate, srch*rate);
+        cv::Mat croppedImage = image(ROI);
+        cv::resize(croppedImage, croppedImage, cv::Size(srcw, srch));
+        cv::cvtColor(croppedImage, croppedImage, cv::COLOR_BGR2RGB);
+        cv::imshow("Detection results", croppedImage);
+        cv::waitKey(0);
 
     }
     catch (const std::exception& error) {

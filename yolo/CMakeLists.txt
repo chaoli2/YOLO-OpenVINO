@@ -27,6 +27,7 @@ include(feature_defs OPTIONAL)
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
     ${CMAKE_CURRENT_SOURCE_DIR}/common/format_reader
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/samples
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${InferenceEngine_INCLUDE_DIRS}
     )
@@ -40,6 +41,6 @@ if(OpenCV_FOUND)
 endif()
 
 add_subdirectory(yolo)
-# add_subdirectory(object_detection_demo_yolov2)
+add_subdirectory(object_detection_demo_yolov2)
 add_subdirectory(common/format_reader)
 add_subdirectory(extension)
