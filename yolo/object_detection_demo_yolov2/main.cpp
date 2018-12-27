@@ -287,31 +287,6 @@ int main(int argc, char *argv[]) {
          * This should be called before load of the network to the plugin **/
         inputInfoItem.second->setPrecision(Precision::FP32);
         inputInfoItem.second->getInputData()->setLayout(Layout::NHWC);
-        // inputInfoItem.second->setPrecision(Precision::U8);
-        // inputInfoItem.second->setLayout(Layout::NCHW);
-
-        ///////////////////////////////////////////////////////////
-        std::vector<std::shared_ptr<unsigned char>> imagesData, orig_img_data;
-        std::vector<int> imageWidths, imageHeights;
-        for (auto & i : imageNames) {
-            FormatReader::ReaderPtr reader(i.c_str());
-            if (reader.get() == nullptr) {
-                slog::warn << "Image " + i + " cannot be read!" << slog::endl;
-                continue;
-            }
-            /** Store image data **/
-            std::shared_ptr<unsigned char> originalData(reader->getData());
-
-            std::shared_ptr<unsigned char> data(
-                    reader->getData(inputInfoItem.second->getTensorDesc().getDims()[3],
-                                    inputInfoItem.second->getTensorDesc().getDims()[2]));
-            if (data.get() != nullptr) {
-                orig_img_data.push_back(originalData);
-                imagesData.push_back(data);
-                imageWidths.push_back(reader->width());
-                imageHeights.push_back(reader->height());
-            }
-        }
 
         float rate = 0;
         int dx = 0;
@@ -368,19 +343,6 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-
-            /** Iterate over all input images **/
-            // auto data = input->buffer().as<PrecisionTrait<Precision::U8>::value_type*>();
-            // for (size_t image_id = 0; image_id < imagesData.size(); ++image_id) {
-            //     /** Iterate over all pixel in image (b,g,r) **/
-            //     for (size_t pid = 0; pid < image_size; pid++) {
-            //         /** Iterate over all channels **/
-            //         for (size_t ch = 0; ch < num_channels; ++ch) {
-            //             /**[images stride + channels stride + pixel id ] all in bytes**/
-            //             data[image_id * image_size * num_channels + ch * image_size + pid ] = imagesData.at(image_id).get()[pid*num_channels + ch];
-            //         }
-            //     }
-            // }
         }
         inputInfo = {};
         // -----------------------------------------------------------------------------------------------------
