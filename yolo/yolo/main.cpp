@@ -18,7 +18,6 @@
 
 #include "helper/tools.hpp"
 #include "helper/flags.hpp"
-#include "helper/CPost.hpp"
 
 using namespace InferenceEngine;
 using namespace std;
