@@ -37,8 +37,11 @@ double IntersectionOverUnion(const helper::object::DetectionObject &box_1,
     return area_of_overlap / area_of_union;
 }
 
-void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
-                       const unsigned long resized_im_w, const unsigned long original_im_h,
+void ParseYOLOV2Output(const Blob::Ptr &blob,
+                       const CNNLayerPtr &layer,
+                       const unsigned long resized_im_h,
+                       const unsigned long resized_im_w, 
+                       const unsigned long original_im_h,
                        const unsigned long original_im_w,
                        const double threshold, 
                        std::vector<helper::object::DetectionObject> &objects) {
@@ -46,10 +49,9 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
     const int out_blob_h = resized_im_h / 32;
     const int out_blob_w = resized_im_w / 32;
     // --------------------------- Extracting layer parameters -------------------------------------
-    // auto num = layer->GetParamAsInt("num");
-    auto num = 5;
-    auto coords = 4;
-    auto classes = 80;
+    auto num = layer->GetParamAsInt("num");
+    auto coords = layer->GetParamAsInt("coords");
+    auto classes = layer->GetParamAsInt("classes");
     std::vector<float> anchors = {
         0.572730, 0.677385, 
         1.874460, 2.062530, 
