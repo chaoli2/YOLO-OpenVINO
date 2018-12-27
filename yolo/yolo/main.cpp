@@ -17,6 +17,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "helper/tools.hpp"
+#include "helper/object.hpp"
 #include "helper/flags.hpp"
 
 using namespace InferenceEngine;
@@ -126,7 +127,7 @@ int main(int argc, char* argv[]){
     // -----------------------------------------------------------------------------------------------------
 
     // --------------------------- 8. Process output -------------------------------------------------------
-    std::vector<tools::DetectionObject> objects;
+    std::vector<helper::object::DetectionObject> objects;
     // Parsing outputs
     for (auto &output : outputInfo) {
         auto output_name = output.first;

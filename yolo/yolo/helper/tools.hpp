@@ -16,33 +16,14 @@ using namespace std;
 
 namespace tools{
 
-
 static int EntryIndex(int side, int lcoords, int lclasses, int location, int entry) {
     int n = location / (side * side);
     int loc = location % (side * side);
     return n * side * side * (lcoords + lclasses + 1) + entry * side * side + loc;
 }
 
-struct DetectionObject {
-    int xmin, ymin, xmax, ymax, class_id;
-    float confidence;
-
-    DetectionObject(double x, double y, double h, double w, int class_id, float confidence, float h_scale, float w_scale) {
-        this->xmin = static_cast<int>((x - w / 2) * w_scale);
-        this->ymin = static_cast<int>((y - h / 2) * h_scale);
-        this->xmax = static_cast<int>(this->xmin + w * w_scale);
-        this->ymax = static_cast<int>(this->ymin + h * h_scale);
-
-        this->class_id = class_id;
-        this->confidence = confidence;
-    }
-
-    bool operator<(const DetectionObject &s2) const {
-        return this->confidence > s2.confidence;
-    }
-};
-
-double IntersectionOverUnion(const DetectionObject &box_1, const DetectionObject &box_2) {
+double IntersectionOverUnion(const helper::object::DetectionObject &box_1, 
+    const helper::object::DetectionObject &box_2) {
     double width_of_overlap_area = fmin(box_1.xmax, box_2.xmax) - fmax(box_1.xmin, box_2.xmin);
     double height_of_overlap_area = fmin(box_1.ymax, box_2.ymax) - fmax(box_1.ymin, box_2.ymin);
     double area_of_overlap;
@@ -59,7 +40,8 @@ double IntersectionOverUnion(const DetectionObject &box_1, const DetectionObject
 void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
                        const unsigned long resized_im_w, const unsigned long original_im_h,
                        const unsigned long original_im_w,
-                       const double threshold, std::vector<DetectionObject> &objects) {
+                       const double threshold, 
+                       std::vector<helper::object::DetectionObject> &objects) {
     // --------------------------- Validating output parameters -------------------------------------
     const int out_blob_h = resized_im_h / 32;
     const int out_blob_w = resized_im_w / 32;
@@ -99,7 +81,7 @@ void ParseYOLOV2Output(const Blob::Ptr &blob, const unsigned long resized_im_h,
                 float prob = scale * output_blob[class_index];
                 if (prob < threshold)
                     continue;
-                DetectionObject obj(x, y, height, width, j, prob,
+                helper::object::DetectionObject obj(x, y, height, width, j, prob,
                         static_cast<float>(original_im_h) / static_cast<float>(resized_im_h),
                         static_cast<float>(original_im_w) / static_cast<float>(resized_im_w));
                 objects.push_back(obj);
