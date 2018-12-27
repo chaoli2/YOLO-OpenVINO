@@ -262,11 +262,6 @@ int main(int argc, char* argv[]){
                 }
             }
         }
-        int row = 52;
-        int c = 1;
-        for(int i = row*416-100+416*416*c; i < row*416+100+416*416*c; i++){
-            printf("%i  %f\n", i, data[i]);
-        }
     }
     inputInfo = {};
     // -----------------------------------------------------------------------------------------------------
@@ -294,15 +289,6 @@ int main(int argc, char* argv[]){
                 objects[j].confidence = 0;
     }
 
-    for (int i = 0; i < objects.size(); i++) {
-        std::cout << "[" << i << "," << objects[i].class_id
-                            << "] element, prob = " << objects[i].confidence <<
-                    "    (" << objects[i].xmin << ","
-                            << objects[i].ymin << ")-("
-                            << objects[i].xmax << ","
-                            << objects[i].ymax << ")" << std::endl;
-    }       
-
     // Drawing boxes
     for (auto &object : objects) {
         if (object.confidence < 0.5)
@@ -322,6 +308,7 @@ int main(int argc, char* argv[]){
     cv::Rect ROI(dx, dy, srcw*rate, srch*rate);
     cv::Mat croppedImage = image(ROI);
     cv::resize(croppedImage, croppedImage, cv::Size(srcw, srch));
+    cv::cvtColor(croppedImage, croppedImage, cv::COLOR_BGR2RGB);
     cv::imshow("Detection results", croppedImage);
     cv::waitKey(0);
 
