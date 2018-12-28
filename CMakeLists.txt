@@ -40,7 +40,7 @@ if(OpenCV_FOUND)
     add_definitions(-DUSE_OPENCV)
 endif()
 
-add_subdirectory(yolo)
+add_subdirectory(YOLOv2)
 add_subdirectory(object_detection_demo_yolov2)
 add_subdirectory(common/format_reader)
 add_subdirectory(extension)
