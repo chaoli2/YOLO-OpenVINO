@@ -23,7 +23,7 @@ convert `.cfg` and `.weights` to `.pb`.
 	```
 
 3. modify the line self.offset = 16 in the ./darkflow/utils/loader.py file and replace with self.offset = 20
-	[error solution ref](https://sites.google.com/view/tensorflow-example-java-api/complete-guide-to-train-yolo/convert-darknet-weights-to-pb-file)
+	[[error solution ref](https://sites.google.com/view/tensorflow-example-java-api/complete-guide-to-train-yolo/convert-darknet-weights-to-pb-file)]
 
 
 4. Copy `coco.names` in `darknet/data` to `labels.txt` in `darkflow`.
