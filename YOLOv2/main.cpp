@@ -166,7 +166,10 @@ int main(int argc, char* argv[]){
             /** Drawing only objects when >confidence_threshold probability **/
             std::ostringstream conf;
             conf << ":" << std::fixed << std::setprecision(3) << confidence;
-            cv::rectangle(image, cv::Point2f(object.xmin, object.ymin), cv::Point2f(object.xmax, object.ymax), cv::Scalar(0, 0, 255));
+            cv::Point2f p1 = cv::Point2f(object.xmin, object.ymin);
+            cv::Point2f p2 = cv::Point2f(object.xmax, object.ymax);
+            cv::rectangle(image, p1, p2, cv::Scalar(0, 0, 255));
+            cv::putText(image, COCONames.at(label), p1, cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(255, 0, 0), 0.2);
         }
     }
     cv::Rect ROI(dx, dy, srcw*rate, srch*rate);
