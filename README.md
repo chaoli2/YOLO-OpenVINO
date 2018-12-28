@@ -32,7 +32,7 @@ convert `.cfg` and `.weights` to `.pb`.
 
 ## 2. Convert pb to IR
 
-1. Modify $MO_ROOT/extensions/front/tf/yolo_v3.json
+1. Modify $MO_ROOT/extensions/front/tf/yolo_v1_v2.json
 
 ```json
  [
