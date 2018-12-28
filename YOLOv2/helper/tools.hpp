@@ -46,12 +46,13 @@ void ParseYOLOV2Output(const Blob::Ptr &blob,
                        const double threshold, 
                        std::vector<helper::object::DetectionObject> &objects) {
     // --------------------------- Validating output parameters -------------------------------------
-    const int out_blob_h = resized_im_h / 32;
-    const int out_blob_w = resized_im_w / 32;
+    const int out_blob_h = layer->input()->dims[0];
+    const int out_blob_w = layer->input()->dims[1];
     // --------------------------- Extracting layer parameters -------------------------------------
-    auto num = layer->GetParamAsInt("num");
-    auto coords = layer->GetParamAsInt("coords");
-    auto classes = layer->GetParamAsInt("classes");
+    const int num = layer->GetParamAsInt("num");
+    const int coords = layer->GetParamAsInt("coords");
+    const int classes = layer->GetParamAsInt("classes");
+
     std::vector<float> anchors = {
         0.572730, 0.677385, 
         1.874460, 2.062530, 

@@ -59,12 +59,14 @@ int main(int argc, char* argv[]){
 
     auto inputInfoItem = *inputInfo.begin();
     auto inputName = inputInfo.begin()->first;
+
+    // IC: network input channel
+    // IH: network input height
+    // IW: network input width
     int IC = inputInfoItem.second->getTensorDesc().getDims()[1];
     int IH = inputInfoItem.second->getTensorDesc().getDims()[2];
     int IW = inputInfoItem.second->getTensorDesc().getDims()[3];
     inputInfoItem.second->setPrecision(Precision::FP32);
-    // inputInfoItem.second->getInputData()->setLayout(Layout::NHWC);
-    // inputInfoItem.second->setPrecision(Precision::U8);
     inputInfoItem.second->setLayout(Layout::NCHW);
 
     float rate = 0;
