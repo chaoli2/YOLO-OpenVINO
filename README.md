@@ -1,9 +1,13 @@
-## Env
+# Status
+
+- **Only** Support YOLO V2 currently.
+
+# Env
 
 - OpenVINO R4
 
 
-[YOLO V2](https://pjreddie.com/darknet/yolov2/)
+# YOLO V2
 
 ## 1. Darkflow to protobuf(.pb)
 
@@ -18,9 +22,9 @@ convert `.cfg` and `.weights` to `.pb`.
 	AssertionError: expect 44948596 bytes, found 44948600
 	```
 
-	[error ref](https://sites.google.com/view/tensorflow-example-java-api/complete-guide-to-train-yolo/convert-darknet-weights-to-pb-file)
-
 3. modify the line self.offset = 16 in the ./darkflow/utils/loader.py file and replace with self.offset = 20
+	[error solution ref](https://sites.google.com/view/tensorflow-example-java-api/complete-guide-to-train-yolo/convert-darknet-weights-to-pb-file)
+
 
 4. Copy `coco.names` in `darknet/data` to `labels.txt` in `darkflow`.
 
@@ -55,63 +59,28 @@ convert `.cfg` and `.weights` to `.pb`.
 --output_dir <IR_PATH>
 ```
 
+## 3. Build&Run OpenVINO
+
+1. mkdir build && cd build
+
+2. cmake .. && make
+
+3. `./yolo -m <IR.XML_PATH> -w <IR.BIN_PATH> -image <IMG_PATH>`
+
 ---
 
-V3:
+TODO: YOLO V1
+
+TODO: YOLO V3
 
 
-
-## 1. Convert YOLO* TensorFlow Model to the IR
+## 1. Convert YOLOv3 TensorFlow Model to the IR
 
 - generate `V3` IR
 
-```bash
-mo_tf.py
---input_model /path/to/yolo_v3.pb
---tensorflow_use_custom_operations_config $MO_ROOT/extensions/front/tf/yolo_v3.json
---batch 1
-```
-
-
-```bash
-
-Model Optimizer arguments:
-Common parameters:
-	- Path to the Input Model: 	/home/sfy/ws/ir/yolo/v1/yolov2.pb
-	- Path for generated IR: 	/home/sfy/ws/ir/yolo/v1/
-	- IR output name: 	yolov2
-	- Log level: 	ERROR
-	- Batch: 	1
-	- Input layers: 	Not specified, inherited from the model
-	- Output layers: 	Not specified, inherited from the model
-	- Input shapes: 	Not specified, inherited from the model
-	- Mean values: 	Not specified
-	- Scale values: 	Not specified
-	- Scale factor: 	Not specified
-	- Precision of IR: 	FP32
-	- Enable fusing: 	True
-	- Enable grouped convolutions fusing: 	True
-	- Move mean values to preprocess section: 	False
-	- Reverse input channels: 	False
-TensorFlow specific parameters:
-	- Input model in text protobuf format: 	False
-	- Offload unsupported operations: 	False
-	- Path to model dump for TensorBoard: 	None
-	- List of shared libraries with TensorFlow custom layers implementation: 	None
-	- Update the configuration file with input/output node names: 	None
-	- Use configuration file used to generate the model with Object Detection API: 	None
-	- Operations to offload: 	None
-	- Patterns to offload: 	None
-	- Use the config file: 	/opt/intel/computer_vision_sdk/deployment_tools/model_optimizer/extensions/front/tf/yolo_v1_v2.json
-Model Optimizer version: 	1.4.292.6ef7232d
-
-[ SUCCESS ] Generated IR model.
-[ SUCCESS ] XML file: /home/sfy/ws/ir/yolo/v1/yolov2.xml
-[ SUCCESS ] BIN file: /home/sfy/ws/ir/yolo/v1/yolov2.bin
-[ SUCCESS ] Total execution time: 9.39 seconds. 
-
-```
-
-
-## 2. Inferring 
-
+	```bash
+	mo_tf.py
+	--input_model /path/to/yolo_v3.pb
+	--tensorflow_use_custom_operations_config $MO_ROOT/extensions/front/tf/yolo_v3.json
+	--batch 1
+	```
