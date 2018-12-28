@@ -75,6 +75,10 @@ int main(int argc, char* argv[]){
     int srcw = 0;
     int srch = 0;
     cv::Mat image = tools::ReadImage(helper::FLAGS_image, IH, IW, &srcw, &srch, &rate, &dx, &dy);
+    
+    vector<string> COCONames;
+    string COCONamesPath = "../../common/coco.names";
+    tools::ReadCOCO(COCONamesPath, COCONames);
     /** Setting batch size using image count **/
     network.setBatchSize(1);
     size_t batchSize = network.getBatchSize();
@@ -155,9 +159,10 @@ int main(int argc, char* argv[]){
         auto label = object.class_id;
         float confidence = object.confidence;
         if (confidence > 0.5) {
-            std::cout << "[" << label << "] element, prob = " << confidence <<
-                        "    (" << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
-                        << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
+            std::cout << "[" << label << "]: \t" << COCONames.at(label) << " \tprob = " 
+                      << setprecision(4) << confidence*100 << "\% \t(" 
+                      << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
+                      << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
             /** Drawing only objects when >confidence_threshold probability **/
             std::ostringstream conf;
             conf << ":" << std::fixed << std::setprecision(3) << confidence;
@@ -170,6 +175,4 @@ int main(int argc, char* argv[]){
     cv::cvtColor(croppedImage, croppedImage, cv::COLOR_BGR2RGB);
     cv::imshow("Detection results", croppedImage);
     cv::waitKey(0);
-
-
 }

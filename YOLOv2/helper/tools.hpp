@@ -16,6 +16,19 @@ using namespace std;
 
 namespace tools{
 
+void ReadCOCO(const string& ClassesFilePath, std::vector<string>& classes){
+    classes.clear();
+    ifstream ifs(ClassesFilePath.c_str());
+    if (!ifs.is_open())
+        CV_Error(cv::Error::StsError, "File " + ClassesFilePath + " not found");
+    string line;
+    while (getline(ifs, line))
+    {
+        classes.push_back(line);
+    }
+
+}
+
 static int EntryIndex(int side, int lcoords, int lclasses, int location, int entry) {
     int n = location / (side * side);
     int loc = location % (side * side);
@@ -46,12 +59,14 @@ void ParseYOLOV2Output(const Blob::Ptr &blob,
                        const double threshold, 
                        std::vector<helper::object::DetectionObject> &objects) {
     // --------------------------- Validating output parameters -------------------------------------
-    const int out_blob_h = layer->input()->dims[0];
-    const int out_blob_w = layer->input()->dims[1];
+    if (layer->type != "RegionYolo")
+        throw std::runtime_error("Invalid output type: " + layer->type + ". RegionYolo expected");
     // --------------------------- Extracting layer parameters -------------------------------------
     const int num = layer->GetParamAsInt("num");
     const int coords = layer->GetParamAsInt("coords");
     const int classes = layer->GetParamAsInt("classes");
+    const int out_blob_h = layer->input()->dims[0];
+    const int out_blob_w = layer->input()->dims[1];
 
     std::vector<float> anchors = {
         0.572730, 0.677385, 
