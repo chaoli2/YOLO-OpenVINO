@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-set(TARGET_NAME "yolo")
+set(TARGET_NAME "yolov2")
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(gflags REQUIRED)

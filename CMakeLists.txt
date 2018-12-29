@@ -40,6 +40,7 @@ if(OpenCV_FOUND)
     add_definitions(-DUSE_OPENCV)
 endif()
 
+add_subdirectory(YOLOv1)
 add_subdirectory(YOLOv2)
 add_subdirectory(common/format_reader)
 add_subdirectory(extension)

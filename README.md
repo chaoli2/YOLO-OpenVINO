@@ -6,17 +6,13 @@
 
 - OpenVINO R4
 
-
-# YOLO V2
-
-## 1. Darkflow to protobuf(.pb)
+# Darkflow to protobuf(.pb)
 
 convert `.cfg` and `.weights` to `.pb`.
 
 1. git clone [darkflow](https://github.com/thtrieu/darkflow)
 
 2. `python3 setup.py build_ext --inplace`
-
 
 	```bash
 	AssertionError: expect 44948596 bytes, found 44948600
@@ -30,9 +26,47 @@ convert `.cfg` and `.weights` to `.pb`.
 
 5. `flow --model cfg/yolo.cfg --load bin/yolo.weights --savepb`
 
-## 2. Convert pb to IR
+---
 
-1. Modify $MO_ROOT/extensions/front/tf/yolo_v1_v2.json
+# YOLO V1
+
+1. Create `yolo_v1.json`
+
+```json
+ [
+   {
+     "id": "TFYOLO",
+     "match_kind": "general",
+     "custom_attributes": {
+       "classes": 20,
+       "coords": 4,
+       "num": 3,
+       "do_softmax": 1
+     }
+   }
+ ]
+```
+
+2. Convert `.pb` to IR
+
+*PS: Can **only** convert yolo-tiny version currently.*
+
+```bash
+./mo_tf.py
+--input_model <path_to_model>/<model_name>.pb \
+--batch 1 \
+--tensorflow_use_custom_operations_config <yolo_v2.json PATH> \
+--output_dir <IR_PATH>
+```
+
+---
+
+# YOLO V2
+
+
+## 1. Convert pb to IR
+
+1. Create `yolo_v2.json`
 
 ```json
  [
@@ -55,11 +89,11 @@ convert `.cfg` and `.weights` to `.pb`.
 ./mo_tf.py
 --input_model <path_to_model>/<model_name>.pb \
 --batch 1 \
---tensorflow_use_custom_operations_config <yolo_v1_v2.json PATH> \
+--tensorflow_use_custom_operations_config <yolo_v2.json PATH> \
 --output_dir <IR_PATH>
 ```
 
-## 3. Build&Run OpenVINO
+## 2. Build&Run OpenVINO
 
 1. mkdir build && cd build
 
