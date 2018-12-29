@@ -40,7 +40,7 @@ convert `.cfg` and `.weights` to `.pb`.
      "custom_attributes": {
        "classes": 20,
        "coords": 4,
-       "num": 3,
+       "num": 2,
        "do_softmax": 1
      }
    }
@@ -49,13 +49,13 @@ convert `.cfg` and `.weights` to `.pb`.
 
 2. Convert `.pb` to IR
 
-*PS: Can **only** convert yolo-tiny version currently.*
+    *PS: Can **only** convert yolo-tiny version currently.*
 
 ```bash
 ./mo_tf.py
 --input_model <path_to_model>/<model_name>.pb \
 --batch 1 \
---tensorflow_use_custom_operations_config <yolo_v2.json PATH> \
+--tensorflow_use_custom_operations_config <yolo_v1.json PATH> \
 --output_dir <IR_PATH>
 ```
 
