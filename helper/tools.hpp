@@ -114,8 +114,6 @@ void ParseYOLOV1Output(const Blob::Ptr &blob,
                        const CNNLayerPtr &layer,
                        const unsigned long resized_im_h,
                        const unsigned long resized_im_w, 
-                       const unsigned long original_im_h,
-                       const unsigned long original_im_w,
                        const double threshold, 
                        std::vector<helper::object::DetectionObject> &objects) {
     // --------------------------- Validating output parameters -------------------------------------
@@ -125,8 +123,6 @@ void ParseYOLOV1Output(const Blob::Ptr &blob,
     const int num = layer->GetParamAsInt("num"); // num of bounding box
     const int coords = layer->GetParamAsInt("coords");
     const int classes = layer->GetParamAsInt("classes");
-    const int out_blob_h = blob->dims()[0];
-    const int out_blob_w = blob->dims()[1];
     const int SS = blob->dims()[0] / (num * 5 + classes);
     const int S = sqrt(SS);
     int prob_size = SS * classes;   // class probabilities 49 * 20 = 980

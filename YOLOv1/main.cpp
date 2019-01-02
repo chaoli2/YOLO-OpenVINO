@@ -119,7 +119,6 @@ int main(int argc, char* argv[]){
         for(int row = 0; row < IH; row ++){
             for(int col = 0; col < IW; col ++){
                 for(int ch = 0; ch < IC; ch ++){
-                    // int dst_index = col*IC + row*IW*IC + ch;
                     int dst_index = ch*IW*IH + row*IW + col;
                     data[dst_index] = image.at<cv::Vec3f>(row, col)[ch];
                 }
@@ -141,7 +140,7 @@ int main(int argc, char* argv[]){
         auto output_name = output.first;
         CNNLayerPtr layer = network_reader.getNetwork().getLayerByName(output_name.c_str());
         Blob::Ptr blob = infer_request.GetBlob(output_name);
-        tools::ParseYOLOV1Output(blob, layer, IH, IW, IH, IW, 0.2, objects);
+        tools::ParseYOLOV1Output(blob, layer, IH, IW, 0.2, objects);
     }
     // Filtering overlapping boxes
     std::sort(objects.begin(), objects.end());
