@@ -1,6 +1,7 @@
 # Status
 
-- **Only** Support YOLO V2 currently.
+- Support YOLO V1 currently.
+- Support YOLO V2 currently.
 
 # Env
 
@@ -30,6 +31,8 @@ convert `.cfg` and `.weights` to `.pb`.
 
 # YOLO V1
 
+## 1. Convert pb to IR
+
 1. Create `yolo_v1.json`
 
 ```json
@@ -58,6 +61,14 @@ convert `.cfg` and `.weights` to `.pb`.
 --tensorflow_use_custom_operations_config <yolo_v1.json PATH> \
 --output_dir <IR_PATH>
 ```
+
+## 2. Build&Run OpenVINO
+
+1. mkdir build && cd build
+
+2. cmake .. && make
+
+3. `./yolov1 -m <IR.XML_PATH> -w <IR.BIN_PATH> -image <IMG_PATH>`
 
 ---
 
@@ -99,11 +110,9 @@ convert `.cfg` and `.weights` to `.pb`.
 
 2. cmake .. && make
 
-3. `./yolo -m <IR.XML_PATH> -w <IR.BIN_PATH> -image <IMG_PATH>`
+3. `./yolov2 -m <IR.XML_PATH> -w <IR.BIN_PATH> -image <IMG_PATH>`
 
 ---
-
-TODO: YOLO V1
 
 TODO: YOLO V3
 
