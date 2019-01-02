@@ -16,9 +16,9 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "helper/tools.hpp"
-#include "helper/object.hpp"
-#include "helper/flags.hpp"
+#include "../helper/tools.hpp"
+#include "../helper/object.hpp"
+#include "../helper/flags.hpp"
 
 using namespace InferenceEngine;
 using namespace std;
