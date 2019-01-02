@@ -155,11 +155,6 @@ void ParseYOLOV1Output(const Blob::Ptr &blob,
                         static_cast<float>(resized_im_h),
                         static_cast<float>(resized_im_w));
                 objects.push_back(obj);
-                // cout << "scale: " << scale 
-                //     << " x: " << x << " y: " << y 
-                //     << " w: " << w << " h: " << h
-                //     << obj
-                //     << endl;
             }
 
         }
