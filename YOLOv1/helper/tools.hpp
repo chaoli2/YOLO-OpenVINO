@@ -96,7 +96,7 @@ std::vector<DetectedObject> ParseYOLOV1Output(float *net_out, int class_num) {
 }
 
 
-void ReadCOCO(const string& ClassesFilePath, std::vector<string>& classes){
+void ReadDataNames(const string& ClassesFilePath, std::vector<string>& classes){
     classes.clear();
     ifstream ifs(ClassesFilePath.c_str());
     if (!ifs.is_open())
@@ -155,9 +155,6 @@ cv::Mat ReadImage(const std::string& imageName, int IH, int IW, int* srcw, int* 
     float resize_ratio = (float)IH / (float)max(imw, imh);
     *rate = resize_ratio;
     cv::resize(image, image, cv::Size(IH, IW));
-    cv::imshow("image", image);
-    cv::waitKey(0);
-
     return image;
 }
 

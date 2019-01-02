@@ -75,6 +75,10 @@ int main(int argc, char* argv[]){
     int srcw = 0;
     int srch = 0;
     cv::Mat image = tools::ReadImage(helper::FLAGS_image, IH, IW, &srcw, &srch, &rate, &dx, &dy);
+
+    vector<string> DataNames;
+    string DataNamesPath = "../../common/voc.names";
+    tools::ReadDataNames(DataNamesPath, DataNames);
     
     /** Setting batch size using image count **/
     network.setBatchSize(1);
@@ -149,9 +153,6 @@ int main(int argc, char* argv[]){
                 objects[j].confidence = 0;
     }
 
-    for(auto obj:objects){
-        cout << obj << endl;
-    }
     // Drawing boxes
     for (auto &object : objects) {
         if (object.confidence < 0.2)
@@ -159,17 +160,17 @@ int main(int argc, char* argv[]){
         auto label = object.class_id;
         float confidence = object.confidence;
         if (confidence > 0.2) {
-            // std::cout << "[" << label << "]: \t" << COCONames.at(label) << " \tprob = " 
-            //           << setprecision(4) << confidence*100 << "\% \t(" 
-            //           << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
-            //           << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
+            std::cout << "[" << label << "]: \t" << DataNames.at(label) << " \tprob = " 
+                      << setprecision(4) << confidence*100 << "\% \t(" 
+                      << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
+                      << std::endl;
             /** Drawing only objects when >confidence_threshold probability **/
             std::ostringstream conf;
             conf << ":" << std::fixed << std::setprecision(3) << confidence;
             cv::Point2f p1 = cv::Point2f(object.xmin, object.ymin);
             cv::Point2f p2 = cv::Point2f(object.xmax, object.ymax);
             cv::rectangle(image, p1, p2, cv::Scalar(0, 0, 255));
-            // cv::putText(image, COCONames.at(label), p1, cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(255, 0, 0), 0.2);
+            cv::putText(image, DataNames.at(label), p1, cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(255, 0, 0), 0.2);
         }
     }
     cv::resize(image, image, cv::Size(srcw, srch));
