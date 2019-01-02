@@ -24,6 +24,12 @@ struct DetectionObject {
     bool operator<(const DetectionObject &s2) const {
         return this->confidence > s2.confidence;
     }
+
+    friend ostream& operator<<(ostream& out, const DetectionObject& obj){
+        out << "[" << obj.xmin << ", " << obj.ymin << "] [" 
+            << obj.xmax << ", " << obj.ymax << "] id: " << obj.class_id << " confi: " << obj.confidence;
+        return out;
+    }
 };
 
 }

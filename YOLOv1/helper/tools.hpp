@@ -168,6 +168,7 @@ void ParseYOLOV1Output(const Blob::Ptr &blob,
                        const unsigned long resized_im_w, 
                        const unsigned long original_im_h,
                        const unsigned long original_im_w,
+                       const double threshold, 
                        std::vector<helper::object::DetectionObject> &objects) {
     // --------------------------- Validating output parameters -------------------------------------
     if (layer->type != "RegionYolo")
@@ -180,15 +181,9 @@ void ParseYOLOV1Output(const Blob::Ptr &blob,
     const int out_blob_w = blob->dims()[1];
     const int SS = blob->dims()[0] / (num * 5 + classes);
     const int S = sqrt(SS);
-
+    int prob_size = SS * classes;   // class probabilities 49 * 20 = 980
+    int conf_size = SS * num;       // 49*2 = 98 confidences for each grid cell
     const float *output_blob = blob->buffer().as<PrecisionTrait<Precision::FP32>::value_type *>();
-
-    cout << "num: " <<  num 
-         << " coords: " << coords 
-         << " classes: " << classes 
-         << " out_blob_h: " << out_blob_h 
-         << " out_blob_w: " << out_blob_w 
-         << " S: " << S << endl;
 
     for (int grid = 0; grid < SS; grid++) {
         int row = grid / S;
@@ -198,23 +193,27 @@ void ParseYOLOV1Output(const Blob::Ptr &blob,
             int p_index = SS * classes + grid * num + b;
             float scale = output_blob[p_index];
             int box_index = SS * (classes + num) + (grid * num + b) * 4;
-            // int objectType = class_num;
-            cout << "scale: " << scale << endl;
+            float x = (output_blob[prob_size + conf_size + (grid * num + b) * 4 + 0] + col) / S;
+            float y = (output_blob[prob_size + conf_size + (grid * num + b) * 4 + 1] + row) / S;
+            float w = pow(output_blob[prob_size + conf_size + (grid * num + b) * 4 + 2], 2);
+            float h = pow(output_blob[prob_size + conf_size + (grid * num + b) * 4 + 3], 2);
 
-            // float conf = confs[(grid * B + b)];
-            // float xc = (cords[(grid * B + b) * 4 + 0] + col) / S;
-            // float yc = (cords[(grid * B + b) * 4 + 1] + row) / S;
-            // float w = pow(cords[(grid * B + b) * 4 + 2], 2);
-            // float h = pow(cords[(grid * B + b) * 4 + 3], 2);
-            // int class_index = grid * C;
-            // float prob = probs[grid * C + class_num] * conf;
+            for (int j = 0; j < classes; ++j) {
+                int class_index = grid * classes + j;
+                float prob = scale * output_blob[class_index];
+                if (prob < threshold)
+                    continue;
+                helper::object::DetectionObject obj(x, y, h, w, j, prob,
+                        static_cast<float>(resized_im_h),
+                        static_cast<float>(resized_im_w));
+                objects.push_back(obj);
+                // cout << "scale: " << scale 
+                //     << " x: " << x << " y: " << y 
+                //     << " w: " << w << " h: " << h
+                //     << obj
+                //     << endl;
+            }
 
-            // DetectedObject bx(objectType, xc - w / 2, yc - h / 2, xc + w / 2,
-            //         yc + h / 2, prob);
-
-            // if (prob >= threshold) {
-            //     boxes.push_back(bx);
-            // }
         }
     }
 

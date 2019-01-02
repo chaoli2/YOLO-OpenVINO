@@ -121,11 +121,6 @@ int main(int argc, char* argv[]){
                 }
             }
         }
-
-        // for(int i = 0; i < 100; i ++){
-        //     cout << i << " - " <<  data[i] << endl;
-        // }
-
     }
 
     inputInfo = {};
@@ -142,7 +137,44 @@ int main(int argc, char* argv[]){
         auto output_name = output.first;
         CNNLayerPtr layer = network_reader.getNetwork().getLayerByName(output_name.c_str());
         Blob::Ptr blob = infer_request.GetBlob(output_name);
-        tools::ParseYOLOV1Output(blob, layer, IH, IW, IH, IW, objects);
+        tools::ParseYOLOV1Output(blob, layer, IH, IW, IH, IW, 0.2, objects);
     }
+    // Filtering overlapping boxes
+    std::sort(objects.begin(), objects.end());
+    for (int i = 0; i < objects.size(); ++i) {
+        if (objects[i].confidence == 0)
+            continue;
+        for (int j = i + 1; j < objects.size(); ++j)
+            if (tools::IntersectionOverUnion(objects[i], objects[j]) >= 0.45)
+                objects[j].confidence = 0;
+    }
+
+    for(auto obj:objects){
+        cout << obj << endl;
+    }
+    // Drawing boxes
+    for (auto &object : objects) {
+        if (object.confidence < 0.2)
+            continue;
+        auto label = object.class_id;
+        float confidence = object.confidence;
+        if (confidence > 0.2) {
+            // std::cout << "[" << label << "]: \t" << COCONames.at(label) << " \tprob = " 
+            //           << setprecision(4) << confidence*100 << "\% \t(" 
+            //           << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
+            //           << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
+            /** Drawing only objects when >confidence_threshold probability **/
+            std::ostringstream conf;
+            conf << ":" << std::fixed << std::setprecision(3) << confidence;
+            cv::Point2f p1 = cv::Point2f(object.xmin, object.ymin);
+            cv::Point2f p2 = cv::Point2f(object.xmax, object.ymax);
+            cv::rectangle(image, p1, p2, cv::Scalar(0, 0, 255));
+            // cv::putText(image, COCONames.at(label), p1, cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(255, 0, 0), 0.2);
+        }
+    }
+    cv::resize(image, image, cv::Size(srcw, srch));
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+    cv::imshow("Detection results", image);
+    cv::waitKey(0);
 
 }
