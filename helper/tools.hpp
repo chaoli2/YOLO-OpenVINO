@@ -17,84 +17,6 @@ using namespace std;
 
 namespace tools{
 
-std::vector<DetectedObject> ParseYOLOV1Output(float *net_out, int class_num) {
-    float threshold = 0.2f;         // The confidence threshold
-    int C = 20;                     // classes
-    int B = 2;                      // bounding boxes
-    int S = 7;                      // cell size
-
-    std::vector<DetectedObject> boxes;
-    std::vector<DetectedObject> boxes_result;
-    int SS = S * S;                 // number of grid cells 7*7 = 49
-    // First 980 values correspons to probabilities for each of the 20 classes for each grid cell.
-    // These probabilities are conditioned on objects being present in each grid cell.
-    int prob_size = SS * C;         // class probabilities 49 * 20 = 980
-    // The next 98 values are confidence scores for 2 bounding boxes predicted by each grid cells.
-    int conf_size = SS * B;         // 49*2 = 98 confidences for each grid cell
-
-    float *probs = &net_out[0];
-    float *confs = &net_out[prob_size];
-    float *cords = &net_out[prob_size + conf_size];     // 98*4 = 392 coords x, y, w, h
-
-    for (int grid = 0; grid < SS; grid++) {
-        int row = grid / S;
-        int col = grid % S;
-        for (int b = 0; b < B; b++) {
-            int index = grid * B + b;
-            int p_index = SS * C + grid * B + b;
-            float scale = net_out[p_index];
-            int box_index = SS * (C + B) + (grid * B + b) * 4;
-            int objectType = class_num;
-
-            float conf = confs[(grid * B + b)];
-            float xc = (cords[(grid * B + b) * 4 + 0] + col) / S;
-            float yc = (cords[(grid * B + b) * 4 + 1] + row) / S;
-            float w = pow(cords[(grid * B + b) * 4 + 2], 2);
-            float h = pow(cords[(grid * B + b) * 4 + 3], 2);
-            int class_index = grid * C;
-            float prob = probs[grid * C + class_num] * conf;
-
-            DetectedObject bx(objectType, xc - w / 2, yc - h / 2, xc + w / 2,
-                    yc + h / 2, prob);
-
-            if (prob >= threshold) {
-                boxes.push_back(bx);
-            }
-        }
-    }
-
-    // Sorting the higher probablities to the top
-    sort(boxes.begin(), boxes.end(),
-            [](const DetectedObject & a, const DetectedObject & b) -> bool {
-                return a.prob > b.prob;
-            });
-
-    // Filtering out overlaping boxes
-    std::vector<bool> overlapped(boxes.size(), false);
-    for (int i = 0; i < boxes.size(); i++) {
-        if (overlapped[i])
-            continue;
-
-        DetectedObject box_i = boxes[i];
-        for (int j = i + 1; j < boxes.size(); j++) {
-            DetectedObject box_j = boxes[j];
-            if (DetectedObject::ioU(box_i, box_j) >= 0.4) {
-                overlapped[j] = true;
-            }
-        }
-    }
-
-    // for (int i = 0; i < boxes.size(); i++) {
-    //     if (boxes[i].prob > 0.0f) {
-    //         boxes_result.push_back(boxes[i]);
-    //     }
-    // }
-	if(!boxes.empty()){
-		boxes_result.push_back(boxes[0]);
-	}
-    return boxes_result;
-}
-
 
 void ReadDataNames(const string& ClassesFilePath, std::vector<string>& classes){
     classes.clear();
@@ -158,6 +80,35 @@ cv::Mat ReadImage(const std::string& imageName, int IH, int IW, int* srcw, int* 
     return image;
 }
 
+cv::Mat ReadImageV2(const std::string& imageName, int IH, int IW, int* srcw, int* srch, float* rate, int* dx, int* dy){
+    cv::Mat image = cv::imread(imageName);
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+    image.convertTo(image, CV_32F, 1.0/255.0, 0);
+    *srcw = image.size().width;
+    *srch = image.size().height;
+    cv::Mat resizedImg (IH, IW, CV_32FC3);
+    resizedImg = cv::Scalar(0.5, 0.5, 0.5);
+    int imw = image.size().width;
+    int imh = image.size().height;
+    float resize_ratio = (float)IH / (float)max(imw, imh);
+    *rate = resize_ratio;
+    cv::resize(image, image, cv::Size(imw*resize_ratio, imh*resize_ratio));
+
+    int new_w = imw;
+    int new_h = imh;
+    if (((float)IW/imw) < ((float)IH/imh)) {
+        new_w = IW;
+        new_h = (imh * IW)/imw;
+    } else {
+        new_h = IH;
+        new_w = (imw * IW)/imh;
+    }
+    *dx = (IW-new_w)/2;
+    *dy = (IH-new_h)/2;
+    embed_image(image, resizedImg, (IW-new_w)/2, (IH-new_h)/2);
+    return resizedImg;
+}
+
 
 void ParseYOLOV1Output(const Blob::Ptr &blob,
                        const CNNLayerPtr &layer,
@@ -213,7 +164,64 @@ void ParseYOLOV1Output(const Blob::Ptr &blob,
 
         }
     }
-
-
 }
+
+void ParseYOLOV2Output(const Blob::Ptr &blob,
+                       const CNNLayerPtr &layer,
+                       const unsigned long resized_im_h,
+                       const unsigned long resized_im_w, 
+                       const unsigned long original_im_h,
+                       const unsigned long original_im_w,
+                       const double threshold, 
+                       std::vector<helper::object::DetectionObject> &objects) {
+    // --------------------------- Validating output parameters -------------------------------------
+    if (layer->type != "RegionYolo")
+        throw std::runtime_error("Invalid output type: " + layer->type + ". RegionYolo expected");
+    // --------------------------- Extracting layer parameters -------------------------------------
+    const int num = layer->GetParamAsInt("num");
+    const int coords = layer->GetParamAsInt("coords");
+    const int classes = layer->GetParamAsInt("classes");
+    const int out_blob_h = layer->input()->dims[0];
+    const int out_blob_w = layer->input()->dims[1];
+
+    std::vector<float> anchors = {
+        0.572730, 0.677385, 
+        1.874460, 2.062530, 
+        3.338430, 5.474340, 
+        7.882820, 3.527780, 
+        9.770520, 9.168280
+    };
+    auto side = out_blob_h;
+    auto side_square = side * side;
+    const float *output_blob = blob->buffer().as<PrecisionTrait<Precision::FP32>::value_type *>();
+
+    // --------------------------- Parsing YOLO Region output -------------------------------------
+    for (int i = 0; i < side_square; ++i) {
+        int row = i / side;
+        int col = i % side;
+        for (int n = 0; n < num; ++n) {
+            int obj_index = EntryIndex(side, coords, classes, n * side * side + i, coords);
+            int box_index = EntryIndex(side, coords, classes, n * side * side + i, 0);
+            float scale = output_blob[obj_index];
+            if (scale < threshold)
+                continue;
+            
+            float x = (col + output_blob[box_index + 0 * side_square]) / side * original_im_w;
+            float y = (row + output_blob[box_index + 1 * side_square]) / side * original_im_h;
+            float height = std::exp(output_blob[box_index + 3 * side_square]) * anchors[2 * n + 1] / side * original_im_h;
+            float width  = std::exp(output_blob[box_index + 2 * side_square]) * anchors[2 * n] / side * original_im_w;
+            for (int j = 0; j < classes; ++j) {
+                int class_index = EntryIndex(side, coords, classes, n * side_square + i, coords + 1 + j);
+                float prob = scale * output_blob[class_index];
+                if (prob < threshold)
+                    continue;
+                helper::object::DetectionObject obj(x, y, height, width, j, prob,
+                        static_cast<float>(original_im_h) / static_cast<float>(resized_im_h),
+                        static_cast<float>(original_im_w) / static_cast<float>(resized_im_w));
+                objects.push_back(obj);
+            }
+        }
+    }
+}
+
 } // namespace tools

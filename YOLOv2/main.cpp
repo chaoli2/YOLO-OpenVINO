@@ -16,9 +16,9 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "helper/tools.hpp"
-#include "helper/object.hpp"
-#include "helper/flags.hpp"
+#include "../helper/tools.hpp"
+#include "../helper/object.hpp"
+#include "../helper/flags.hpp"
 
 using namespace InferenceEngine;
 using namespace std;
@@ -74,11 +74,11 @@ int main(int argc, char* argv[]){
     int dy = 0;
     int srcw = 0;
     int srch = 0;
-    cv::Mat image = tools::ReadImage(helper::FLAGS_image, IH, IW, &srcw, &srch, &rate, &dx, &dy);
+    cv::Mat image = tools::ReadImageV2(helper::FLAGS_image, IH, IW, &srcw, &srch, &rate, &dx, &dy);
     
     vector<string> COCONames;
     string COCONamesPath = "../../common/coco.names";
-    tools::ReadCOCO(COCONamesPath, COCONames);
+    tools::ReadDataNames(COCONamesPath, COCONames);
     /** Setting batch size using image count **/
     network.setBatchSize(1);
     size_t batchSize = network.getBatchSize();
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]){
             std::cout << "[" << label << "]: \t" << COCONames.at(label) << " \tprob = " 
                       << setprecision(4) << confidence*100 << "\% \t(" 
                       << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
-                      << ((confidence > 0.5) ? " WILL BE RENDERED!" : "") << std::endl;
+                      << std::endl;
             /** Drawing only objects when >confidence_threshold probability **/
             std::ostringstream conf;
             conf << ":" << std::fixed << std::setprecision(3) << confidence;
