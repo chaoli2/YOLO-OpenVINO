@@ -243,9 +243,12 @@ void ParseYOLOV2Output(const Blob::Ptr &blob,
     }
 }
 
-#define yolo_scale_13 19
-#define yolo_scale_26 38
-#define yolo_scale_52 76
+#define yolo_scale_13 13
+#define yolo_scale_26 26
+#define yolo_scale_52 52
+#define yolo_scale_19 19
+#define yolo_scale_38 38
+#define yolo_scale_76 76
 
 void ParseYOLOV3Output(const Blob::Ptr &blob,
                        const CNNLayerPtr &layer,
@@ -291,6 +294,15 @@ void ParseYOLOV3Output(const Blob::Ptr &blob,
             anchor_offset = 2 * 3;
             break;
         case yolo_scale_52:
+            anchor_offset = 2 * 0;
+            break;
+        case yolo_scale_19:
+            anchor_offset = 2 * 6;
+            break;
+        case yolo_scale_38:
+            anchor_offset = 2 * 3;
+            break;
+        case yolo_scale_76:
             anchor_offset = 2 * 0;
             break;
         default:
