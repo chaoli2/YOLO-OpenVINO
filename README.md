@@ -10,7 +10,7 @@
 
 # Darkflow to protobuf(.pb)
 
-convert `.cfg` and `.weights` to `.pb`.
+convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
 
 1. git clone [darkflow](https://github.com/thtrieu/darkflow)
 
