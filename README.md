@@ -140,7 +140,7 @@ convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
     --input_img <path_to_image>/<image>                     \
     --output_img ./out.jpg
     ```
-    *PS: set `--size` 416 or 608 according your model.*
+    *PS: set `--size` 416 or 608 according to your model.*
 
 2. Convert `.pb` to IR
 
