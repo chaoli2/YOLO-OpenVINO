@@ -2,7 +2,7 @@
 
 - YOLO V1 :smile:
 - YOLO V2 :smile:
-- YOLO V2 :smile:
+- YOLO V3 :smile:
 
 # Env
 
