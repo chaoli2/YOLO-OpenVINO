@@ -159,8 +159,9 @@ int main(int argc, char* argv[]){
         auto label = object.class_id;
         float confidence = object.confidence;
         if (confidence > 0.5) {
-            std::cout << "[" << label << "]: \t" << COCONames.at(label) << " \tprob = " 
-                      << setprecision(4) << confidence*100 << "\% \t(" 
+            std::cout << "[" << std::right << setw(3) << label << "]: " 
+                      << std::left << setw(10) << COCONames.at(label) 
+                      << " \tprob = " << setprecision(4) << confidence*100 << "\% \t(" 
                       << object.xmin << "," << object.ymin << ")-(" << object.xmax << "," << object.ymax << ")"
                       << std::endl;
             /** Drawing only objects when >confidence_threshold probability **/
