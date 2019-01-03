@@ -1,7 +1,8 @@
 # Status
 
-- Support YOLO V1 currently.
-- Support YOLO V2 currently.
+- YOLO V1 :smile:
+- YOLO V2 :smile:
+- YOLO V2 :smile:
 
 # Env
 
@@ -149,3 +150,11 @@ convert `.cfg` and `.weights` to `.pb`.
 	--tensorflow_use_custom_operations_config $MO_ROOT/extensions/front/tf/yolo_v3.json
 	--batch 1
 	```
+
+## 2. Build&Run OpenVINO
+
+1. mkdir build && cd build
+
+2. cmake .. && make
+
+3. `./yolov3 -m <IR.XML_PATH> -w <IR.BIN_PATH> -image <IMG_PATH>`
