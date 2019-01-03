@@ -145,11 +145,11 @@ convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
 2. Convert `.pb` to IR
 
 	```bash
-	mo_tf.py
-	--input_model /path/to/yolo_v3.pb
-  --output_dir <OUTPUT_PATH>
-	--tensorflow_use_custom_operations_config $MO_ROOT/extensions/front/tf/yolo_v3.json
-	--batch 1
+    mo_tf.py
+    --input_model /path/to/yolo_v3.pb
+    --output_dir <OUTPUT_PATH>
+    --tensorflow_use_custom_operations_config $MO_ROOT/extensions/front/tf/yolo_v3.json
+    --batch 1
 	```
 
 ## 2. Build&Run OpenVINO
