@@ -263,7 +263,6 @@ void ParseYOLOV3Output(const Blob::Ptr &blob,
         throw std::runtime_error("Invalid output type: " + layer->type + ". RegionYolo expected");
     const int out_blob_h = static_cast<int>(blob->getTensorDesc().getDims()[2]);
     const int out_blob_w = static_cast<int>(blob->getTensorDesc().getDims()[3]);
-    cout << "out_blob_h: " << out_blob_h << " out_blob_w: " << out_blob_w << endl;
     if (out_blob_h != out_blob_w)
         throw std::runtime_error("Invalid size of output " + layer->name +
         " It should be in NCHW layout and H should be equal to W. Current H = " + std::to_string(out_blob_h) +

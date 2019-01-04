@@ -138,11 +138,9 @@ int main(int argc, char* argv[]){
     // Parsing outputs
     for (auto &output : outputInfo) {
         auto output_name = output.first;
-        cout << output_name << endl;
         CNNLayerPtr layer = network_reader.getNetwork().getLayerByName(output_name.c_str());
         Blob::Ptr blob = infer_request.GetBlob(output_name);
         tools::ParseYOLOV3Output(blob, layer, IH, IW, IH, IW, 0.5, objects);
-        cout << "===========================" << endl;
     }
 
     // Filtering overlapping boxes
