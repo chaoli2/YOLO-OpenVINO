@@ -127,7 +127,19 @@ int main(int argc, char* argv[]){
     // -----------------------------------------------------------------------------------------------------
 
     // --------------------------- 7. Do inference ---------------------------------------------------------
+    typedef std::chrono::high_resolution_clock Time;
+    typedef std::chrono::duration<double, std::ratio<1, 1000>> ms;
+    typedef std::chrono::duration<float> fsec;
+    double total = 0.0;
+
+    auto t0 = Time::now();
     infer_request.Infer();
+    auto t1 = Time::now();
+
+    fsec fs = t1 - t0;
+    ms d = std::chrono::duration_cast<ms>(fs);
+    total += d.count();
+    std::cout << std::endl << "total inference time: " << total << " ms" << std::endl;
     // -----------------------------------------------------------------------------------------------------
 
     // --------------------------- 8. Process output -------------------------------------------------------
