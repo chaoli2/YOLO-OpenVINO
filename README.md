@@ -119,37 +119,23 @@ convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
 
 ## 1. Convert pb to IR
 
-1. Dump YOLOv3 TenorFlow* Model
+1. Using [`v3ConvertTool`](./v3ConvertTool/) Dump YOLOv3 TenorFlow* Model.
 
-  - git clone https://github.com/mystic123/tensorflow-yolo-v3.git
-  - git checkout fb9f543
-  - Open demo.py file in a text editor and make the following changes:
-    - Replace NCHW with NHWC on the line 57.
-    - Insert the following lines after the line 64:
-      ```python
-      from tensorflow.python.framework import graph_io
-      frozen = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, ['concat_1'])
-      graph_io.write_graph(frozen, './', 'yolo_v3.pb', as_text=False)
-      ```
-  - run the following command:
     ```bash
-    python3 demo.py                                         \
-    --weights_file <path_to_weights_file>/yolov3.weights    \
-    --class_names <path_to_labels_file>/coco.names.txt      \
-    --size <network_input_size>                             \
-    --input_img <path_to_image>/<image>                     \
-    --output_img ./out.jpg
+      python3 dump.py                        \
+        --class_names ../common/coco.names   \
+        --weights_file <yolov3.weights_paht> \
+        --size <302 or 416 or 608>
     ```
-    *PS: set `--size` 416 or 608 according to your model.*
 
 2. Convert `.pb` to IR
 
 	```bash
     mo_tf.py
-    --input_model /path/to/yolo_v3.pb
-    --output_dir <OUTPUT_PATH>
-    --tensorflow_use_custom_operations_config $MO_ROOT/extensions/front/tf/yolo_v3.json
-    --batch 1
+      --input_model /path/to/yolo_v3.pb
+      --output_dir <OUTPUT_PATH>
+      --tensorflow_use_custom_operations_config $MO_ROOT/extensions/front/tf/yolo_v3.json
+      --batch 1
 	```
 
 ## 2. Build&Run OpenVINO
