@@ -29,9 +29,8 @@ COMPILE_PDB_NAME ${TARGET_NAME})
 target_link_libraries(${TARGET_NAME} 
         cpu_extension 
         pthread 
-        format_reader 
-        cpu_extension 
         gflags
         ${InferenceEngine_LIBRARIES}
         ${LIB_DL}
+        ${OpenCV_LIBS}
 )

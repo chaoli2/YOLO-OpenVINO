@@ -14,7 +14,6 @@ if (NOT InferenceEngine_FOUND)
     message(FATAL_ERROR "")
 endif()
 
-
 set(CMAKE_BUILD_TYPE "Debug")
 set(CMAKE_CXX_STANDARD 11)
 set(LIB_DL dl)
@@ -23,18 +22,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wuninitialized -Winit-self -Wmaybe-unin
 
 include(feature_defs OPTIONAL)
 
-
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
-    ${CMAKE_CURRENT_SOURCE_DIR}/common/format_reader
     ${CMAKE_CURRENT_SOURCE_DIR}/common/samples
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${InferenceEngine_INCLUDE_DIRS}
-    )
+)
     
-
-# Find OpenCV libray if exists
-find_package(OpenCV)
+# Find OpenCV libray
+find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 if(OpenCV_FOUND)
     add_definitions(-DUSE_OPENCV)
@@ -43,5 +39,4 @@ endif()
 add_subdirectory(YOLOv1)
 add_subdirectory(YOLOv2)
 add_subdirectory(YOLOv3)
-add_subdirectory(common/format_reader)
 add_subdirectory(extension)

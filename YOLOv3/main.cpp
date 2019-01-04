@@ -8,9 +8,7 @@
 #include <gflags/gflags.h>
 
 #include <ext_list.hpp>
-#include <format_reader_ptr.h>
 #include <samples/common.hpp>
-#include <opencv_wraper.h>
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
