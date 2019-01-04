@@ -243,6 +243,7 @@ void ParseYOLOV2Output(const Blob::Ptr &blob,
     }
 }
 
+#define yolo_scale_10 10
 #define yolo_scale_13 13
 #define yolo_scale_26 26
 #define yolo_scale_52 52
@@ -285,27 +286,44 @@ void ParseYOLOV3Output(const Blob::Ptr &blob,
     try { anchors = layer->GetParamAsFloats("anchors"); } catch (...) {}
     auto side = out_blob_h;
     int anchor_offset = 0;
-    switch (side) {
-        case yolo_scale_13:
-            anchor_offset = 2 * 6;
-            break;
-        case yolo_scale_26:
-            anchor_offset = 2 * 3;
-            break;
-        case yolo_scale_52:
-            anchor_offset = 2 * 0;
-            break;
-        case yolo_scale_19:
-            anchor_offset = 2 * 6;
-            break;
-        case yolo_scale_38:
-            anchor_offset = 2 * 3;
-            break;
-        case yolo_scale_76:
-            anchor_offset = 2 * 0;
-            break;
-        default:
-            throw std::runtime_error("Invalid output size");
+    if(resized_im_h == 302){
+        switch (side) {
+            case yolo_scale_10:
+                anchor_offset = 2 * 6;
+                break;
+            case yolo_scale_19:
+                anchor_offset = 2 * 3;
+                break;
+            case yolo_scale_38:
+                anchor_offset = 2 * 0;
+                break;
+            default:
+                throw std::runtime_error("Invalid output size");
+        }
+    }
+    else{
+        switch (side) {
+            case yolo_scale_13:
+                anchor_offset = 2 * 6;
+                break;
+            case yolo_scale_26:
+                anchor_offset = 2 * 3;
+                break;
+            case yolo_scale_52:
+                anchor_offset = 2 * 0;
+                break;
+            case yolo_scale_19:
+                anchor_offset = 2 * 6;
+                break;
+            case yolo_scale_38:
+                anchor_offset = 2 * 3;
+                break;
+            case yolo_scale_76:
+                anchor_offset = 2 * 0;
+                break;
+            default:
+                throw std::runtime_error("Invalid output size");
+        }
     }
     auto side_square = side * side;
     const float *output_blob = blob->buffer().as<PrecisionTrait<Precision::FP32>::value_type *>();
