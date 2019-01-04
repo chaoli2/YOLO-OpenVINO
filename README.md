@@ -121,12 +121,12 @@ convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
 
 1. Using [`v3ConvertTool`](./v3ConvertTool/) Dump YOLOv3 TenorFlow* Model.
 
-  ```bash
+    ```bash
     python3 dump.py                        \
       --class_names ../common/coco.names   \
       --weights_file <yolov3.weights_paht> \
       --size <302 or 416 or 608>
-  ```
+    ```
 
 2. Convert `.pb` to IR
 
