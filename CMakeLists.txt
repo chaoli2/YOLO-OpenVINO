@@ -25,6 +25,7 @@ include(feature_defs OPTIONAL)
 # Properties->C/C++->General->Additional Include Directories
 include_directories (
     ${CMAKE_CURRENT_SOURCE_DIR}/common/samples
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/helper
     ${CMAKE_CURRENT_SOURCE_DIR}/common
     ${InferenceEngine_INCLUDE_DIRS}
 )
