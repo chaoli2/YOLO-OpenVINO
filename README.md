@@ -10,23 +10,46 @@
 
 # Darkflow to protobuf(.pb)
 
-convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
+How to convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
 
-1. git clone [darkflow](https://github.com/thtrieu/darkflow)
+1.Install [darkflow](https://github.com/thtrieu/darkflow)
 
-2. `python3 setup.py build_ext --inplace`
+    1.1 Install prerequsites
+    ```bash
+    pip3 install tensorflow opencv-python numpy
+    ```
 
-	```bash
-	AssertionError: expect 44948596 bytes, found 44948600
-	```
+    1.2 Get darkflow and YOLO-OpenVINO
+    ```bash
+    git clone https://github.com/thtrieu/darkflow
+    git clone https://github.com/chaoli2/YOLO-OpenVINO
+    ```
 
-3. modify the line self.offset = 16 in the ./darkflow/utils/loader.py file and replace with self.offset = 20
-	[[error solution ref](https://sites.google.com/view/tensorflow-example-java-api/complete-guide-to-train-yolo/convert-darknet-weights-to-pb-file)]
+    1.3 modify the line self.offset = 16 in the ./darkflow/utils/loader.py file and replace with self.offset = 20
 
+    1.4 Install darkflow
+    ```bash
+    pip install .
+    ```
 
-4. Copy `coco.names` in `darknet/data` to `labels.txt` in `darkflow`.
+2. Copy `voc.names` in `YOLO-OpenVINO/common` to `labels.txt` in `darkflow`.
+```bash
+cp YOLO-OpenVINO/common/voc.names darkflow/labels.txt
+```
 
-5. `flow --model cfg/yolo.cfg --load bin/yolo.weights --savepb`
+3. Get yolov2 weights and cfg 
+```bash
+cd darkflow
+mkdir -p models
+wget -c https://pjreddie.com/media/files/yolov2-voc.weights
+wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov2-voc.cfg
+
+```
+
+4. Run convert script
+```bash
+flow --model models/yolov2-voc.cfg --load models/yolov2-voc.weights --savepb
+```
 
 ---
 
