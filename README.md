@@ -16,7 +16,7 @@ How to convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
 
     1.1 Install prerequsites
     ```bash
-    pip3 install tensorflow opencv-python numpy networkx
+    pip3 install tensorflow opencv-python numpy networkx cython
     ```
 
     1.2 Get darkflow and YOLO-OpenVINO
