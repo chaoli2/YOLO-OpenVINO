@@ -16,7 +16,7 @@ How to convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
 
     1.1 Install prerequsites
     ```bash
-    pip3 install tensorflow opencv-python numpy
+    pip3 install tensorflow opencv-python numpy networkx
     ```
 
     1.2 Get darkflow and YOLO-OpenVINO
@@ -29,7 +29,7 @@ How to convert `YOLOv1` and `YOLOv2` `.cfg` and `.weights` to `.pb`.
 
     1.4 Install darkflow
     ```bash
-    pip install .
+    pip3 install .
     ```
 
 2. Copy `voc.names` in `YOLO-OpenVINO/common` to `labels.txt` in `darkflow`.
@@ -41,6 +41,7 @@ cp YOLO-OpenVINO/common/voc.names darkflow/labels.txt
 ```bash
 cd darkflow
 mkdir -p models
+cd models
 wget -c https://pjreddie.com/media/files/yolov2-voc.weights
 wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov2-voc.cfg
 
@@ -98,37 +99,33 @@ flow --model models/yolov2-voc.cfg --load models/yolov2-voc.weights --savepb
 
 # YOLO V2
 
-
-## 1. Convert pb to IR
-
-1. Create `yolo_v2.json`
-
-```json
- [
-   {
-     "id": "TFYOLO",
-     "match_kind": "general",
-     "custom_attributes": {
-       "classes": 80,
-       "coords": 4,
-       "num": 5,
-       "do_softmax": 1
-     }
-   }
- ]
+## 1. Create yolo_v2.json 
+```
+[
+  {
+    "id": "TFYOLO",
+    "match_kind": "general",
+    "custom_attributes": {
+      "classes": 20,
+      "coords": 4,
+      "num": 5,
+      "do_softmax": 1
+    }
+  }
+]
 ```
 
-2. Convert `.pb` to IR
+## 2. Convert pb to IR
 
 ```bash
-./mo_tf.py
---input_model <path_to_model>/<model_name>.pb \
+/opt/intel/computer_vision_sdk/deployment_tools/model_optimizer/mo_tf.py \
+--input_model built_graph/yolov2-voc.pb \
 --batch 1 \
---tensorflow_use_custom_operations_config <yolo_v2.json PATH> \
---output_dir <IR_PATH>
+--tensorflow_use_custom_operations_config /opt/intel/computer_vision_sdk/deployment_tools/model_optimizer/extensions/front/tf/yolo_v1_v2.json \
+--output_dir .
 ```
 
-## 2. Build&Run OpenVINO
+## 3. Build&Run OpenVINO
 
 1. mkdir build && cd build
 
