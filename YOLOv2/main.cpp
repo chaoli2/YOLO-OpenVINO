@@ -8,7 +8,7 @@
 #include <gflags/gflags.h>
 
 #include <ext_list.hpp>
-#include <samples/common.hpp>
+#include <common.hpp>
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -35,6 +35,11 @@ int main(int argc, char* argv[]){
 
     // 1. Load a Plugin
     vector<string> pluginDirs {PLUGIN_DIR};
+    for(unsigned int i = 0; i < pluginDirs.size(); i++)
+    {
+      std::cout << "pluginDirs is " << pluginDirs[i] << std::endl;
+    }
+
     InferenceEnginePluginPtr engine_ptr = PluginDispatcher(pluginDirs).getSuitablePlugin(TargetDevice::eCPU);
     InferencePlugin plugin(engine_ptr);
     cout << "Plugin Version: " << plugin.GetVersion()->apiVersion.major << "." << plugin.GetVersion()->apiVersion.minor << endl;
@@ -44,6 +49,7 @@ int main(int argc, char* argv[]){
     // 2. Read the Model Intermediate Representation (IR)
     CNNNetReader network_reader;
     network_reader.ReadNetwork(helper::FLAGS_m);
+    std::cout << "m is " << helper::FLAGS_m << std::endl;
     network_reader.ReadWeights(helper::FLAGS_w);
 
     // 3. Configure Input and Output
@@ -80,6 +86,8 @@ int main(int argc, char* argv[]){
     /** Setting batch size using image count **/
     network.setBatchSize(1);
     size_t batchSize = network.getBatchSize();
+    std::cout << "batch size is " << batchSize << std::endl;
+
     // ------------------------------ Prepare output blobs -------------------------------------------------
     OutputsDataMap outputInfo(network.getOutputsInfo());
     // BlobMap outputBlobs;
