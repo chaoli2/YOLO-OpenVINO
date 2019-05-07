@@ -137,28 +137,40 @@ flow --model models/yolov2-voc.cfg --load models/yolov2-voc.weights --savepb
 
 # YOLO V3
 
-## 1. Convert pb to IR
+## 1. Create yolo_v3.json 
+```
+[
+  {
+    "id": "TFYOLOV3",
+    "match_kind": "general",
+    "custom_attributes": {
+      "classes": 80,
+      "coords": 4,
+      "num": 9,
+      "mask": [0, 1, 2],
+      "entry_points": ["detector/yolo-v3/Reshape", "detector/yolo-v3/Reshape_4", "detector/yolo-v3/Reshape_8"]
+    }
+  }
+]
+```
+## 2. Convert pb to IR
 
 1. Using [`v3ConvertTool`](./v3ConvertTool/) Dump YOLOv3 TenorFlow* Model.
 
     ```bash
-    python3 dump.py                        \
-      --class_names ../common/coco.names   \
-      --weights_file <yolov3.weights_paht> \
-      --size <302 or 416 or 608>
+    python3 convert_weights_pb.py --class_names coco.names --data_format NHWC --weights_file yolov3.weights
     ```
 
 2. Convert `.pb` to IR
 
-	```bash
-    mo_tf.py
-      --input_model /path/to/yolo_v3.pb
-      --output_dir <OUTPUT_PATH>
-      --tensorflow_use_custom_operations_config $MO_ROOT/extensions/front/tf/yolo_v3.json
-      --batch 1
-	```
+    ```bash
+    python3 /opt/intel/computer_vision_sdk/deploymet_tools/model_optimizer/mo_tf.py \
+    --input_model /home/intel/Downloads/tensorflow-yolo-v3/frozen_darknet_yolov3_model.pb \
+    --tensorflow_use_custom_operations_config /opt/intel/computer_vision_sdk/deployment_tools/model_optimizer/extensions/front/tf/yolo_v3.json \
+    --input_shape=[1,416,416,3]
+    ```
 
-## 2. Build&Run OpenVINO
+## 3. Build&Run OpenVINO
 
 1. mkdir build && cd build
 
